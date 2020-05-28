@@ -3,6 +3,7 @@
 #include <EEPROM.h>
 #include <CommandHandler.h>
 #include <Commands.h>
+#include <ChargerStateMachine.h>
 
 #include <Configuration.h>
 
@@ -12,20 +13,8 @@
 
 #include <WiFiManager.h>
 
-enum class State{
-  Idle,
-  VehicleDetected,
-  Advertizing,
-  Energizing,
-  Charging,
-  DeEnergizing,
-  Fault,
-  Error
-};
-
 DHT* dht;
-State state;
-CommandHandler<> SerialCommandHandler;
+CommandHandler<> serialCommandHandler = CommandHandler<>();
 
 //Initializes and tests the meteorological sensor
 void ReadMet(){
@@ -47,12 +36,13 @@ void ReadMet(){
 }
 
 void RegisterCommands(){
-    //Set configuration variables
-    SerialCommandHandler.AddCommand(F("Set_WiFi_SSID"), Cmd_SetWiFiSSID);
-    SerialCommandHandler.AddCommand(F("Set_WiFi_Pass"), Cmd_SetWiFiPass);
-    SerialCommandHandler.AddCommand(F("WiFi_Connect"), Cmd_WiFiConnect);
-    SerialCommandHandler.AddCommand(F("ReadSettings"), Cmd_ReadSettings);
+  //Set configuration variables
+  serialCommandHandler.AddCommand(F("Set_WiFi_SSID"), Cmd_SetWiFiSSID);
+  serialCommandHandler.AddCommand(F("Set_WiFi_Pass"), Cmd_SetWiFiPass);
+  serialCommandHandler.AddCommand(F("WiFi_Connect"), Cmd_WiFiConnect);
+  serialCommandHandler.AddCommand(F("ReadSettings"), Cmd_ReadSettings);
 }
+
 
 void setup() {
   pinMode(32, OUTPUT);
@@ -93,10 +83,11 @@ void setup() {
 
   //Set initial state
   Serial.println(" - Entering idle state");
-  state = State::Idle;
 
   //Reset the GFCI
   GFCI::Reset();
+
+  ChargerStateMachine::Init();
 
   ControlPilot::BeginPulse();
 
@@ -104,32 +95,12 @@ void setup() {
 }
 
 void loop() {
-  SerialCommandHandler.Process();
+  serialCommandHandler.Process();
   Serial.println(ControlPilot::ToString(ControlPilot::State()));
 
   CpState cpState = ControlPilot::State();
 
-  switch(state){
-    //IDLE state
-    //From here, we can only go to VehicleDetected
-    case State::Idle:
-      if(cpState == CpState::VehicleDetected){
-        ControlPilot::BeginPulse();
-        state = State::VehicleDetected;
-      }      
-    break;
-
-    //VehicleDetected state
-    //The vehicle can either remain in this state indefinitely,
-    //or request charge/charge with ventilation
-    //The charger could also be disconnected
-    case State::VehicleDetected:
-      //Vehicle requests charging
-      if(cpState == CpState::Charge || cpState == CpState::ChargeWithVentilation){
-        
-      }
-    break;
-  }
+  //stateMachine.run();
 
   delay(1000);
 }
