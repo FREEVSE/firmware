@@ -13,7 +13,8 @@ class ChargerStateMachine{
     public:
         static void Init();
         static void Run();
-        static State State;
+
+        static State state;
     private:
         static void IdleState();
         static bool IdleToVehicleDetectedTransition();

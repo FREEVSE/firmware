@@ -15,13 +15,31 @@ void ChargerStateMachine::Init(){
     idleState->addTransition(&IdleToErrorTransition, errorState);
 }
 
-State ChargerStateMachine::State = State::Idle;
+State ChargerStateMachine::state = State::Idle;
 
 void ChargerStateMachine::Run(){
-    switch (ChargerStateMachine::State)
+    switch (state)
     {
     case State::Idle:
-        /* code */
+        //Idle routine
+        IdleState();
+
+        //State transitions
+        if(IdleToVehicleDetectedTransition()){
+            state = State::VehicleDetected;
+            break;
+        }
+
+        if(IdleToFaultTransition()){
+            state = State::Fault;
+            break;
+        }
+
+        if(IdleToErrorTransition()){
+            state = State::Error;
+            break;
+        }
+            
         break;
     
     default:
