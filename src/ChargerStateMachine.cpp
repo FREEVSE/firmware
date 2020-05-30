@@ -21,7 +21,9 @@ void ChargerStateMachine::Run(){
     switch (ChargerStateMachine::State)
     {
     case State::Idle:
-        /* code */
+        ChargerStateMachine::IdleState();
+        if(ChargerStateMachine::IdleToVehicleDetectedTransition())
+            State = State::VehicleDetected;
         break;
     
     default:
