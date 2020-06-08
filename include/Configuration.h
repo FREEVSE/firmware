@@ -2,6 +2,8 @@
 
 #pragma once
 
+#define DEBUG
+
 //Pin assignments
 #define DHT_PIN 13
 #define CP_PWM 15

@@ -39,5 +39,5 @@ void Configuration::SetWiFiPass(const char * pass){
 int Configuration::GetCpPwmDutyCycle(){
     float onTime = Configuration::GetMaxOutputAmps() / CP_PWM_AMP_STEP * CP_PWM_STEP;
     float period = 1 / CP_PWM_FREQ;
-    return int(onTime / period * 1023);
+    return 1023 - int(onTime / period * 1023);
 }

@@ -2,60 +2,73 @@
 #include <ControlPilot.h>
 #include <Arduino.h>
 
+#include <driver/ledc.h>
+
 //Private
 hw_timer_t * ControlPilot::intTimer;
 bool ControlPilot::pulsing = false;
 
+int ControlPilot::lastCpValue = 0;
+
 void ControlPilot::Init(){
     pinMode(CP_PWM, OUTPUT);
+    pinMode(32, OUTPUT);
     adcAttachPin(CP_READ);
 
     ledcSetup(0, CP_PWM_FREQ, 10);
+    ledcAttachPin(CP_PWM, 0);
+    ledcWrite(0, 0);
+
+    delayMicroseconds(170);
+
+    intTimer = timerBegin(0, 80, true);
+    timerAttachInterrupt(intTimer, &read_cp, true);
+    timerAlarmWrite(intTimer, 10000, true);
 }
 
 void IRAM_ATTR ControlPilot::read_cp(){
-  adcStart(CP_READ);
+    digitalWrite(32, HIGH);
+    adcStart(CP_READ);
+    digitalWrite(32, LOW);
 }
 
 void ControlPilot::BeginPulse(){
-  //Start the timer and begin pulsing the CP line
-  ledcAttachPin(CP_PWM, 0);
-  
-  ledcWrite(0, Configuration::GetCpPwmDutyCycle());
+    ledcWrite(0, Configuration::GetCpPwmDutyCycle());
+    timerAlarmEnable(intTimer);
 
-  //delayMicroseconds(30);
-
-  intTimer = timerBegin(0, 80, true);
-
-  //Timer to read CP voltage every 10ms
-  timerAttachInterrupt(intTimer, &read_cp, true);
-  timerAlarmWrite(intTimer, 10000, true);
-  timerAlarmEnable(intTimer);
-
-  pulsing = true;
+    pulsing = true;
 }
 
 void ControlPilot::EndPulse(){
-  timerEnd(intTimer);
-  ledcDetachPin(CP_PWM);
-  digitalWrite(CP_PWM, HIGH);
+    if(!pulsing)
+        return;
 
-  pulsing = false;
+    timerAlarmDisable(intTimer);
+    ledcWrite(0, 0);
+
+    pulsing = false;
 }
 
 CpState ControlPilot::State(){
     int cpValue;
 
     if(pulsing){
-        cpValue = adcEnd(CP_READ);
+        if(adcBusy(CP_READ)){
+            Serial.println("Adc is busy, returning last CP value");
+            cpValue = ControlPilot::lastCpValue;
+        }
+        else{
+            Serial.println("Adc not busy, retuning new value");
+            cpValue = adcEnd(CP_READ);
+        }
     }
     else{
+        Serial.println("Not pulsing, retuning analog read value");
         cpValue = analogRead(CP_READ);
     }
     
-
-    Serial.println(cpValue);
-
+    ControlPilot::lastCpValue = cpValue;
+    
     if(cpValue >= CP_IDLE_MIN){
         return CpState::Idle;  
     }              

@@ -22,7 +22,8 @@ class ControlPilot{
 
     private:
         static hw_timer_t * intTimer;
-
+        
         static void IRAM_ATTR read_cp();        
         static bool pulsing;
+        static int lastCpValue;
 };

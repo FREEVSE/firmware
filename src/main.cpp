@@ -3,7 +3,7 @@
 #include <EEPROM.h>
 #include <CommandHandler.h>
 #include <Commands.h>
-#include <ChargerStateMachine.h>
+#include <ChargerAtm.h>
 
 #include <Configuration.h>
 
@@ -11,10 +11,11 @@
 #include <GFCI.h>
 #include <ControlPilot.h>
 
-#include <WiFiManager.h>
+//#include <WiFiManager.h>
 
 DHT* dht;
 CommandHandler<> serialCommandHandler = CommandHandler<>();
+ChargerAtm stateMachine;
 
 //Initializes and tests the meteorological sensor
 void ReadMet(){
@@ -81,15 +82,13 @@ void setup() {
     Serial.println("  -> !!! Error initializing met sensor !!!");
   }
 
-  //Set initial state
-  Serial.println(" - Entering idle state");
-
   //Reset the GFCI
   GFCI::Reset();
 
-  ChargerStateMachine::Init();
+  stateMachine.trace(Serial);
+  stateMachine.begin();
 
-  ControlPilot::BeginPulse();
+  //ControlPilot::BeginPulse();
 
   //WiFiManager::Init();
 }
@@ -98,9 +97,7 @@ void loop() {
   serialCommandHandler.Process();
   Serial.println(ControlPilot::ToString(ControlPilot::State()));
 
-  CpState cpState = ControlPilot::State();
-
-  //stateMachine.run();
+  stateMachine.cycle();
 
   delay(1000);
 }
