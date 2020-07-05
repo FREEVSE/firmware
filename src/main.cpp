@@ -38,9 +38,11 @@ void ReadMet(){
 
 void RegisterCommands(){
   //Set configuration variables
-  serialCommandHandler.AddCommand(F("Set_WiFi_SSID"), Cmd_SetWiFiSSID);
-  serialCommandHandler.AddCommand(F("Set_WiFi_Pass"), Cmd_SetWiFiPass);
+  serialCommandHandler.AddCommand(F("set"), Cmd_Set);
   serialCommandHandler.AddCommand(F("WiFi_Connect"), Cmd_WiFiConnect);
+
+  //GFCI
+  serialCommandHandler.AddCommand(F("GFCI"), Cmd_GFCI);
   serialCommandHandler.AddCommand(F("ReadSettings"), Cmd_ReadSettings);
 }
 
@@ -51,8 +53,7 @@ void setup() {
   pinMode(CTR_ENER, OUTPUT);
 
   analogReadResolution(9);
-
-  delay(1000);
+  
   Serial.begin(115200);
   Serial.println("EVSE v0.1 - © 2019 Matthew Goulart");
   Serial.println("Beginning initialization...");
@@ -77,7 +78,7 @@ void setup() {
   Serial.println(" - Initializing environmental sensor...");
   dht = new DHT(DHT_PIN, DHT22);
   dht->begin();
-
+  
   if(!dht->read()) {//Test DHT sensor
     Serial.println("  -> !!! Error initializing met sensor !!!");
   }
@@ -95,10 +96,9 @@ void setup() {
 
 void loop() {
   serialCommandHandler.Process();
-  Serial.println(ControlPilot::ToString(ControlPilot::State()));
 
   stateMachine.cycle();
 
-  delay(1000);
+  delay(100);
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Automaton.h>
+#include <ControlPilot.h>
 
 class ChargerAtm: public Machine{
     public:
@@ -19,9 +20,14 @@ class ChargerAtm: public Machine{
         ChargerAtm & begin();
         int event(int id);
         void action(int id);
+        void cycle();
         ChargerAtm & trace(Stream & stream);
 
     private:
         void EnterIdle();
         void EnterVehicleDetected();
+        void EnterCharging();
+        void ExitCharging();
+
+        CpState cpState;
 };

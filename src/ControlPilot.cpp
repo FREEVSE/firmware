@@ -4,26 +4,45 @@
 
 #include <driver/ledc.h>
 
+#define ISR_DELAY 5
+
 //Private
 hw_timer_t * ControlPilot::intTimer;
 bool ControlPilot::pulsing = false;
+int ControlPilot::highTime = 0;
 
 int ControlPilot::lastCpValue = 0;
 
 void ControlPilot::Init(){
     pinMode(CP_PWM, OUTPUT);
+    digitalWrite(CP_PWM, LOW);
     pinMode(32, OUTPUT);
     adcAttachPin(CP_READ);
 
-    ledcSetup(0, CP_PWM_FREQ, 10);
-    ledcAttachPin(CP_PWM, 0);
-    ledcWrite(0, 0);
+    ControlPilot::highTime = (int)(Configuration::GetCpPwmDutyCycle() * CP_PWM_FREQ);
 
-    delayMicroseconds(170);
+    intTimer = timerBegin(CP_TIMER, 80, true);
+}
 
-    intTimer = timerBegin(0, 80, true);
-    timerAttachInterrupt(intTimer, &read_cp, true);
-    timerAlarmWrite(intTimer, 10000, true);
+void IRAM_ATTR ControlPilot::PulseHigh(){
+    digitalWrite(CP_PWM, HIGH);
+
+    timerRestart(intTimer);
+    timerAttachInterrupt(intTimer, &PulseLow, true);
+    timerAlarmWrite(intTimer, CP_PWM_FREQ - highTime, false);
+    timerAlarmEnable(intTimer);
+}
+
+void IRAM_ATTR ControlPilot::PulseLow(){
+    digitalWrite(CP_PWM, LOW);
+
+    //delayMicroseconds(10);
+    adcStart(CP_READ);
+
+    timerRestart(intTimer);
+    timerAttachInterrupt(intTimer, &PulseHigh, true);
+    timerAlarmWrite(intTimer, highTime - ISR_DELAY, false);
+    timerAlarmEnable(intTimer);
 }
 
 void IRAM_ATTR ControlPilot::read_cp(){
@@ -33,7 +52,9 @@ void IRAM_ATTR ControlPilot::read_cp(){
 }
 
 void ControlPilot::BeginPulse(){
-    ledcWrite(0, Configuration::GetCpPwmDutyCycle());
+
+    timerAttachInterrupt(intTimer, &PulseHigh, true);
+    timerAlarmWrite(intTimer, 10000, false);
     timerAlarmEnable(intTimer);
 
     pulsing = true;
@@ -44,7 +65,7 @@ void ControlPilot::EndPulse(){
         return;
 
     timerAlarmDisable(intTimer);
-    ledcWrite(0, 0);
+    digitalWrite(CP_PWM, LOW);
 
     pulsing = false;
 }
@@ -53,19 +74,13 @@ CpState ControlPilot::State(){
     int cpValue;
 
     if(pulsing){
-        if(adcBusy(CP_READ)){
-            Serial.println("Adc is busy, returning last CP value");
+        if(adcBusy(CP_READ))
             cpValue = ControlPilot::lastCpValue;
-        }
-        else{
-            Serial.println("Adc not busy, retuning new value");
+        else
             cpValue = adcEnd(CP_READ);
-        }
     }
-    else{
-        Serial.println("Not pulsing, retuning analog read value");
+    else
         cpValue = analogRead(CP_READ);
-    }
     
     ControlPilot::lastCpValue = cpValue;
     

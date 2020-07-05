@@ -1,17 +1,19 @@
 #include <ChargerAtm.h>
 #include <Automaton.h>
+#include <Configuration.h>
 
 #include <ControlPilot.h>
 #include <GFCI.h>
 
+
 ChargerAtm & ChargerAtm::begin(){
     const static state_t state_table[] PROGMEM = {
-        /*                      ON_ENTER    ON_LOOP     ON_EXIT     EVT_VEHICLE_DISCONNECTED     EVT_VEHICLE_DETECTED    EVT_CHARGE_REQUESTED   EVT_GFCI_TRIP     ELSE */
-        /* IDLE */              ENT_IDLE,        -1,         -1,                          -1,        VEHICLE_DETECTED,                     -1,          ERROR,      -1,
-        /* VEHICLE_DETECTED */    ENT_VD,   LOOP_VD,     EXT_VD,                        IDLE,                      -1,               CHARGING,          ERROR,      -1,
-        /* CHARGING */                -1,        -1,         -1,                        IDLE,        VEHICLE_DETECTED,                     -1,          ERROR,      -1, 
-        /* FAULT */                   -1,        -1,         -1,                          -1,                      -1,                     -1,          ERROR,      -1,
-        /* ERROR */                   -1,        -1,         -1,                          -1,                      -1,                     -1,          ERROR,      -1
+        /*                          ON_ENTER    ON_LOOP         ON_EXIT     EVT_VEHICLE_DISCONNECTED     EVT_VEHICLE_DETECTED    EVT_CHARGE_REQUESTED   EVT_GFCI_TRIP     ELSE */
+        /* IDLE */                  ENT_IDLE,        -1,             -1,                          -1,        VEHICLE_DETECTED,                     -1,          FAULT,      -1,
+        /* VEHICLE_DETECTED */        ENT_VD,   LOOP_VD,         EXT_VD,                        IDLE,                      -1,               CHARGING,          FAULT,      -1,
+        /* CHARGING */          ENT_CHARGING,        -1,   EXT_CHARGING,                        IDLE,        VEHICLE_DETECTED,                     -1,          FAULT,      -1, 
+        /* FAULT */                       -1,        -1,             -1,                          -1,                      -1,                     -1,             -1,      -1,
+        /* ERROR */                       -1,        -1,             -1,                          -1,                      -1,                     -1,             -1,      -1
     };
 
     Machine::begin(state_table, ELSE);
@@ -19,18 +21,30 @@ ChargerAtm & ChargerAtm::begin(){
     return *this;
 }
 
+void ChargerAtm::cycle(){
+    cpState = ControlPilot::State(); //Cache CP state so we dont try to read it for each event check
+    Machine::cycle();
+}
+
 void ChargerAtm::EnterIdle(){
-    Serial.println("Entering IDLE state");
     ControlPilot::EndPulse();
 }
 
 void ChargerAtm::EnterVehicleDetected(){
-    Serial.println("Entering VEHICLE_DETECTED state");
     ControlPilot::BeginPulse();
 }
 
+void ChargerAtm::EnterCharging(){
+    GFCI::Inhibit();
+    digitalWrite(CTR_ENER, HIGH);
+}
+
+void ChargerAtm::ExitCharging(){
+    digitalWrite(CTR_ENER, LOW);
+}
+
 int ChargerAtm::event(int id){
-    CpState cpState = ControlPilot::State();
+    //CpState cpState = ControlPilot::State();
 
     switch(id){
         case EVT_VEHICLE_DISCONNECTED:
@@ -43,7 +57,7 @@ int ChargerAtm::event(int id){
             return cpState == CpState::Charge || cpState == CpState::ChargeWithVentilation;
 
         case EVT_GFCI_TRIP:
-            return 0;
+            return !GFCI::State();
 
         return 0;
     }
@@ -53,6 +67,8 @@ void ChargerAtm::action(int id){
     switch(id){
         case ENT_IDLE: EnterIdle(); break;
         case ENT_VD: EnterVehicleDetected(); break;
+        case ENT_CHARGING: EnterCharging(); break;
+        case EXT_CHARGING: ExitCharging(); break;
     }
 }
 
