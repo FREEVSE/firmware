@@ -5,13 +5,17 @@
 #define DEBUG
 
 //Pin assignments
+#define SDA_PIN 25
+#define SCL_PIN 26
 #define DHT_PIN 32
-#define CP_PWM 15
-#define CP_READ 33
-#define GFI_INT 23
-#define GFI_SET 18
-#define GFI_TEST 16
-#define CTR_ENER 21
+#define CP_PWM_PIN 15
+#define CP_READ_PIN 33
+#define GFI_INT_PIN 21
+#define GFI_SET_PIN 18
+#define GFI_TEST_PIN 16
+#define CTR_ENER_PIN 19
+#define SENS_L1_PIN 22
+#define SENS_L2_PIN 23
 
 //Timers
 #define CP_TIMER 0
@@ -19,12 +23,12 @@
 
 //CP state levels
 //These are the expected ADC readings for each of the possible CP states
-#define CP_WITH_VENT 319
-#define CP_CHARGING 383
-#define CP_PRESENT 460
+#define CP_WITH_VENT 294
+#define CP_CHARGING 358
+#define CP_PRESENT 448
 #define CP_IDLE 511
 
-#define CP_STATE_TOLERANCE 32   //CP adc value must be within +/- this value
+#define CP_STATE_TOLERANCE 21   //CP adc value must be within +/- this value
 
 //These are the possible ranges for the CP state readings. Anything within the _MIN and _MAX values will be considered valid
 #define CP_WITH_VENT_MIN CP_WITH_VENT - CP_STATE_TOLERANCE
@@ -47,7 +51,7 @@
 
 //GFCI configuration
 #define GFCI_PWM_CHAN 2
-#define GFCI_TST_FREQ 60
+#define GFCI_TST_FREQ 2000
 
 
 class Configuration{

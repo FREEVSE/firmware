@@ -35,12 +35,12 @@ void ChargerAtm::EnterVehicleDetected(){
 }
 
 void ChargerAtm::EnterCharging(){
-    GFCI::Inhibit();
-    digitalWrite(CTR_ENER, HIGH);
+    //GFCI::Inhibit();
+    digitalWrite(CTR_ENER_PIN, HIGH);
 }
 
 void ChargerAtm::ExitCharging(){
-    digitalWrite(CTR_ENER, LOW);
+    digitalWrite(CTR_ENER_PIN, LOW);
 }
 
 int ChargerAtm::event(int id){
