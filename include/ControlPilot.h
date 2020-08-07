@@ -10,6 +10,12 @@ enum class CpState{
     Invalid
 };
 
+enum Action{
+    PulseHigh,
+    Sample,
+    PulseLow
+};
+
 class ControlPilot{
     public:
         static void Init();
@@ -21,11 +27,8 @@ class ControlPilot{
         static const char* ToString(const CpState value);
 
     private:
-        static hw_timer_t * intTimer;   
-
-        static void IRAM_ATTR PulseHigh();
-        static void IRAM_ATTR PulseLow();
-        static void IRAM_ATTR Sample();        
+        static void IRAM_ATTR Pulse(void *);
+        static Action nextAction;        
         static bool pulsing;
         static int lastCpValue;
         static int highTime;
