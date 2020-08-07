@@ -1,0 +1,28 @@
+{
+    "name": "Automaton", 
+    "version": "1.0.3", 
+    "keywords": [
+        "state", 
+        "machine"
+    ], 
+    "description": "A multi tasking table driven finite state machine framework for Arduino", 
+    "authors": [
+        {
+            "email": "tinkerspy@myown.mailcan.com", 
+            "url": "https://github.com/tinkerspy", 
+            "maintainer": false, 
+            "name": "Tinkerspy"
+        }
+    ], 
+    "repository": {
+        "type": "git", 
+        "url": "https://github.com/tinkerspy/Automaton"
+    }, 
+    "frameworks": [
+        "arduino"
+    ], 
+    "platforms": [
+        "atmelavr"
+    ], 
+    "id": 545
+}

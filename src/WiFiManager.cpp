@@ -9,20 +9,11 @@ void WiFiManager::Init(){
 
 void WiFiManager::Connect(){
     Serial.println("Connecting to wifi AP in EEPROM");
-    delay(10);
 
-    char *_ssid = new char[CFG_SIZE_WIFI_SSID] {'n', '\0'};
-    char *_pass = new char[CFG_SIZE_WIFI_PASS] {'n', '\0'};
+    String ssid = Configuration::GetWiFiSSID();
+    String pass = Configuration::GetWiFiPass();
 
-    int ssidLen = Configuration::GetWiFiSSID(_ssid);
-    int passLen = Configuration::GetWiFiPass(_pass);
-
-    Serial.println(_ssid);
-    Serial.println(_pass);
-
-    delay(10);
-
-    WiFi.begin(_ssid, _pass);
+    WiFi.begin(ssid.c_str(), pass.c_str());
 
     Serial.print("Connecting to WiFi");
 

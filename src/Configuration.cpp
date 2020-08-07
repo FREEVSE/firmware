@@ -18,16 +18,16 @@ void Configuration::SetMaxOutputAmps(short val){
 }
 
 //WiFi Info
-size_t Configuration::GetWiFiSSID(char *ssid){
-    return prefs.getString("WIFI_SSID", ssid, CFG_SIZE_WIFI_SSID);
+String Configuration::GetWiFiSSID(){
+    return prefs.getString("WIFI_SSID");
 }
 
 void Configuration::SetWiFiSSID(const char * ssid){
     prefs.putString("WIFI_SSID", ssid);
 }
 
-size_t Configuration::GetWiFiPass(char *pass){
-    return prefs.getString("WIFI_PASS", pass, CFG_SIZE_WIFI_PASS);
+String Configuration::GetWiFiPass(){
+    return prefs.getString("WIFI_PASS");
 }
 
 void Configuration::SetWiFiPass(const char * pass){
@@ -36,8 +36,8 @@ void Configuration::SetWiFiPass(const char * pass){
 
 //Control Pilot PWM signal duty cycle
 //Get
-int Configuration::GetCpPwmDutyCycle(){
-    float onTime = Configuration::GetMaxOutputAmps() / CP_PWM_AMP_STEP * CP_PWM_STEP;
+float Configuration::GetCpPwmDutyCycle(){
     float period = 1 / CP_PWM_FREQ;
-    return int(onTime / period * 1023);
+    float onTime = GetMaxOutputAmps() / CP_PWM_AMP_STEP * CP_PWM_STEP;
+    return onTime / period;
 }

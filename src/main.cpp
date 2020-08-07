@@ -1,20 +1,23 @@
 #include <Arduino.h>
+#include <Wire.h>
 #include <DHT.h>
 #include <EEPROM.h>
 #include <CommandHandler.h>
 #include <Commands.h>
-#include <ChargerStateMachine.h>
+#include <ChargerAtm.h>
 
 #include <Configuration.h>
 
 //Hardware modules
 #include <GFCI.h>
 #include <ControlPilot.h>
+#include <ACDetector.h>
 
-#include <WiFiManager.h>
+//#include <WiFiManager.h>
 
 DHT* dht;
 CommandHandler<> serialCommandHandler = CommandHandler<>();
+ChargerAtm stateMachine;
 
 //Initializes and tests the meteorological sensor
 void ReadMet(){
@@ -37,9 +40,11 @@ void ReadMet(){
 
 void RegisterCommands(){
   //Set configuration variables
-  serialCommandHandler.AddCommand(F("Set_WiFi_SSID"), Cmd_SetWiFiSSID);
-  serialCommandHandler.AddCommand(F("Set_WiFi_Pass"), Cmd_SetWiFiPass);
+  serialCommandHandler.AddCommand(F("set"), Cmd_Set);
   serialCommandHandler.AddCommand(F("WiFi_Connect"), Cmd_WiFiConnect);
+
+  //GFCI
+  serialCommandHandler.AddCommand(F("GFCI"), Cmd_GFCI);
   serialCommandHandler.AddCommand(F("ReadSettings"), Cmd_ReadSettings);
 }
 
@@ -47,11 +52,14 @@ void RegisterCommands(){
 void setup() {
   pinMode(32, OUTPUT);
 
-  pinMode(CTR_ENER, OUTPUT);
+  pinMode(CTR_ENER_PIN, OUTPUT);
 
+  //Set analog read res to a lower value for slightly more linear curve.
   analogReadResolution(9);
 
-  delay(1000);
+  //Set I2C pins
+  Wire.begin(SDA_PIN, SCL_PIN);
+
   Serial.begin(115200);
   Serial.println("EVSE v0.1 - © 2019 Matthew Goulart");
   Serial.println("Beginning initialization...");
@@ -72,36 +80,34 @@ void setup() {
   Serial.println(" - Initializing control pilot...");
   ControlPilot::Init();
 
+  Serial.println(" - Initializeing AC detector...");
+  ACDetector::Init();
+
   //Init met sensor
-  Serial.println(" - Initializing environmental sensor...");
+  /*Serial.println(" - Initializing environmental sensor...");
   dht = new DHT(DHT_PIN, DHT22);
   dht->begin();
-
+  
   if(!dht->read()) {//Test DHT sensor
     Serial.println("  -> !!! Error initializing met sensor !!!");
-  }
-
-  //Set initial state
-  Serial.println(" - Entering idle state");
+  }*/
 
   //Reset the GFCI
   GFCI::Reset();
 
-  ChargerStateMachine::Init();
+  stateMachine.trace(Serial);
+  stateMachine.begin();
 
-  ControlPilot::BeginPulse();
+  //ControlPilot::BeginPulse();
 
   //WiFiManager::Init();
 }
 
 void loop() {
   serialCommandHandler.Process();
-  Serial.println(ControlPilot::ToString(ControlPilot::State()));
 
-  CpState cpState = ControlPilot::State();
+  stateMachine.cycle();
 
-  //stateMachine.run();
-
-  delay(1000);
+  delay(100);
 }
 
