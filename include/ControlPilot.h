@@ -23,9 +23,9 @@ class ControlPilot{
     private:
         static hw_timer_t * intTimer;   
 
-        static void IRAM_ATTR PulseHigh(void *);
-        static void IRAM_ATTR PulseLow(void *);
-        static void IRAM_ATTR Sample(void *);        
+        static void IRAM_ATTR PulseHigh();
+        static void IRAM_ATTR PulseLow();
+        static void IRAM_ATTR Sample();        
         static bool pulsing;
         static int lastCpValue;
         static int highTime;

@@ -3,8 +3,25 @@
 #include <Arduino.h>
 
 #include <driver/timer.h>
+#include <driver/gpio.h>
+#include <soc/soc.h>
 
 #define ISR_DELAY 5
+
+#define SCHED_ACTION(t, a)\
+    timerAttachInterrupt(intTimer, &a, true);\
+    timerAlarmWrite(intTimer, t, true);\
+    timerAlarmEnable(intTimer);
+
+/*#define SCHED_ACTION(t, a)\
+    timer_set_alarm_value(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, t);\
+    timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, a, NULL, ESP_INTR_FLAG_IRAM, NULL);\
+    timer_enable_intr(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0);    
+
+#define SCHED_ACTION_IN_ISR(t, a)\
+    REG_WRITE(TIMG_T0ALARMLO_REG, (int) a);\
+    REG_WRITE(TIMG_T0ALARMHI_REG, (int) (a >> 32));
+    */
 
 //Private
 DRAM_ATTR hw_timer_t * ControlPilot::intTimer;
@@ -20,9 +37,12 @@ void ControlPilot::Init(){
     digitalWrite(CP_PWM_PIN, LOW);
     pinMode(32, OUTPUT);
     adcAttachPin(CP_READ_PIN);
-
+  
     ControlPilot::highTime = (int)(Configuration::GetCpPwmDutyCycle() * CP_PWM_FREQ);
+    
+    intTimer = timerBegin(CP_TIMER, 80, true);
 
+    /*
     //Set up our timer. We use IDF here because arduino makes too many assumptions
     timer_config_t tConfig;
     tConfig.divider = 80; //Prescaler of 80 gives us a resolution of 1uS
@@ -33,47 +53,34 @@ void ControlPilot::Init(){
 
     timer_init(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, &tConfig);
     timer_set_counter_value(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, 0x00000000ULL); //Timer will reset to this value on alarm
-    
+    */
 }
 
-void IRAM_ATTR ControlPilot::PulseLow(void *){
-    Serial.println("pulse low");
+void IRAM_ATTR ControlPilot::PulseLow(){
     digitalWrite(CP_PWM_PIN, HIGH);
-
-    timer_set_alarm_value(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, CP_PWM_FREQ - highTime);
-    timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, PulseHigh, NULL, ESP_INTR_FLAG_IRAM, NULL);
-    timer_enable_intr(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0);    
+    
+    SCHED_ACTION(CP_PWM_FREQ - highTime, PulseHigh);
 }
 
-void IRAM_ATTR ControlPilot::PulseHigh(void *){
-    Serial.println("pulse high");
+void IRAM_ATTR ControlPilot::PulseHigh(){
     digitalWrite(CP_PWM_PIN, LOW);
 
-    timer_set_alarm_value(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, 30);
-    timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, Sample, NULL, ESP_INTR_FLAG_IRAM, NULL);
-    timer_enable_intr(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0);
+    SCHED_ACTION(30, Sample);
 }
 
-void IRAM_ATTR ControlPilot::Sample(void *){
-    Serial.println("sample");
+void IRAM_ATTR ControlPilot::Sample(){
     digitalWrite(32, HIGH);
     adcStart(CP_READ_PIN);
     digitalWrite(32, LOW);
 
-    timer_set_alarm_value(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, highTime - 30);
-    timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, PulseLow, NULL, ESP_INTR_FLAG_IRAM, NULL);
-    timer_enable_intr(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0);
+    SCHED_ACTION(highTime - 30, PulseLow);
 }
 
 void ControlPilot::BeginPulse(){
-    Serial.println("Begin pulse...");
     if(pulsing)
         return;
 
-    timer_set_alarm_value(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, 100);
-    timer_enable_intr(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0);
-    timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, PulseHigh, NULL, ESP_INTR_FLAG_IRAM, NULL);    
-    timer_start(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0);
+    PulseHigh();
 
    pulsing = true;
 }
