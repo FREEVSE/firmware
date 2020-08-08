@@ -6,6 +6,8 @@
 #include <driver/gpio.h>
 #include <soc/soc.h>
 
+//TODO Fix all the hardcoded timer groups and numbers
+
 Action ControlPilot::nextAction;
 bool ControlPilot::pulsing = false;
 int ControlPilot::highTime = 0;
