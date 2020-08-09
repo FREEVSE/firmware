@@ -45,6 +45,9 @@ void RegisterCommands(){
 
   //GFCI
   serialCommandHandler.AddCommand(F("GFCI"), Cmd_GFCI);
+  //ACDetector
+  serialCommandHandler.AddCommand(F("AC"), Cmd_AC);
+  
   serialCommandHandler.AddCommand(F("ReadSettings"), Cmd_ReadSettings);
 }
 

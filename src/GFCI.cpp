@@ -22,6 +22,21 @@ void GFCI::EndTest(){
     ledcWrite(GFCI_PWM_CHAN, 0);
 }
 
+bool GFCI::SelfTest(){
+    BeginTest();
+    delay(500);
+    EndTest();
+    delay(1000);
+
+    if(State() != false){
+        return false;
+    }
+
+    Reset();
+
+    return true;
+}
+
 void GFCI::Reset(){
     digitalWrite(GFI_SET_PIN, HIGH);
     delay(10);

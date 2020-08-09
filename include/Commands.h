@@ -11,6 +11,10 @@ void SetPass(CommandParameter &params);
 
 void Cmd_GFCI(CommandParameter &params);
 
+//AC Detector commands
+
+void Cmd_AC(CommandParameter &params);
+
 //General
 void Cmd_ReadSettings(CommandParameter &params);
 

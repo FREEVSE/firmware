@@ -8,6 +8,7 @@ class GFCI{
         static void Init();
         static void BeginTest();
         static void EndTest();
+        static bool SelfTest();
         static void Reset();
         static bool State();
         static void Inhibit(int ms = 1000);

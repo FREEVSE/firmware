@@ -3,6 +3,7 @@
 #include <Configuration.h>
 
 #include <GFCI.h>
+#include <ACDetector.h>
 
 #include <WiFiManager.h>
 
@@ -146,6 +147,22 @@ void Cmd_GFCI(CommandParameter &params){
 
 #pragma endregion
 
+#pragma region ACDetector commands
+void Cmd_AC(CommandParameter &params){
+    const char *cmd = params.NextParameter();
+
+    if(cmd == NULL){
+        Serial.println(noCommandError);
+        return;
+    }
+
+    switch(hash(cmd)){
+        case hash("isL1Present"): Serial.println(ACDetector::IsL1Present()); break;
+        case hash("isL2Present"): Serial.println(ACDetector::IsL1Present()); break;
+    }
+}
+
+#pragma endregion
 void Cmd_ReadSettings(CommandParameter &params){
     Serial.println("**Charge Settings**");
     Serial.print("Max amp output: ");
