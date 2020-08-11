@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include "Arduino.h"
 #include <Wire.h>
 #include <DHT.h>
 #include <EEPROM.h>
@@ -20,9 +20,7 @@ CommandHandler<> serialCommandHandler = CommandHandler<>();
 ChargerAtm stateMachine;
 
 //Initializes and tests the meteorological sensor
-void ReadMet(){
-  
-  
+void ReadMet(){ 
   float hum = dht->readHumidity();
   float temp = dht->readTemperature();
 
@@ -50,7 +48,6 @@ void RegisterCommands(){
   
   serialCommandHandler.AddCommand(F("ReadSettings"), Cmd_ReadSettings);
 }
-
 
 void setup() {
   pinMode(32, OUTPUT);

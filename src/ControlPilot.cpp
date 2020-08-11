@@ -51,7 +51,7 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
         
         case Action::Sample:
             digitalWrite(32, HIGH);
-            adcStart(CP_READ_PIN);
+            lastCpValue = analogRead(CP_READ_PIN);
             digitalWrite(32, LOW);
             nextActionDelay = highTime - 30;
             nextAction = Action::PulseLow;
@@ -97,16 +97,16 @@ void ControlPilot::EndPulse(){
 CpState ControlPilot::State(){
     int cpValue;
 
-    if(pulsing){
+    /*if(pulsing){
         if(adcBusy(CP_READ_PIN))
             cpValue = ControlPilot::lastCpValue;
         else
             cpValue = adcEnd(CP_READ_PIN);
     }
     else
-        cpValue = analogRead(CP_READ_PIN);
+        cpValue = analogRead(CP_READ_PIN);*/
     
-    ControlPilot::lastCpValue = cpValue;
+    cpValue = ControlPilot::lastCpValue;
     
     if(cpValue >= CP_IDLE_MIN){
         return CpState::Idle;  

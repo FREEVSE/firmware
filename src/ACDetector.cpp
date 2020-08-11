@@ -2,7 +2,6 @@
 #include <ACDetector.h>
 #include <Configuration.h>
 #include <driver/gpio.h>
-#include <stdatomic.h>
 
 #define PIN_MASK ((1ULL<<SENS_L1_PIN) | (1ULL<<SENS_L2_PIN))
 

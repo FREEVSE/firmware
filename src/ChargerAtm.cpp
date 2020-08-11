@@ -94,6 +94,8 @@ int ChargerAtm::event(int id){
 
         return 0;
     }
+
+    return 0;
 }
 
 void ChargerAtm::action(int id){
