@@ -80,19 +80,3 @@ class Factory : Automaton {
 // Main framework classes
 
 #include <Machine.hpp>
-
-// Bundled state machines (components)
-
-#include <Atm_analog.hpp>
-#include <Atm_bit.hpp>
-#include <Atm_button.hpp>
-#include <Atm_command.hpp>
-#include <Atm_comparator.hpp>
-#include <Atm_controller.hpp>
-#include <Atm_digital.hpp>
-#include <Atm_encoder.hpp>
-#include <Atm_fade.hpp>
-#include <Atm_led.hpp>
-#include <Atm_fan.hpp>
-#include <Atm_step.hpp>
-#include <Atm_timer.hpp>
