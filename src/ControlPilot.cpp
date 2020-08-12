@@ -4,6 +4,7 @@
 
 #include <driver/timer.h>
 #include <driver/gpio.h>
+#include <driver/adc.h>
 #include <soc/soc.h>
 
 //TODO Fix all the hardcoded timer groups and numbers
@@ -12,16 +13,18 @@ Action ControlPilot::nextAction;
 bool ControlPilot::pulsing = false;
 int ControlPilot::highTime = 0;
 
-int ControlPilot::lastCpValue = 0;
+volatile int ControlPilot::lastCpValue = 0;
 
 void ControlPilot::Init(){
     pinMode(CP_PWM_PIN, OUTPUT);
     pinMode(32, OUTPUT);
-    digitalWrite(CP_PWM_PIN, LOW);
-    pinMode(32, OUTPUT);
-    adcAttachPin(CP_READ_PIN);
+
+    //adcAttachPin(CP_READ_PIN);
+    adc1_config_width(ADC_WIDTH_9Bit);
+    adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_DB_0);
 
     ControlPilot::highTime = (int)(Configuration::GetCpPwmDutyCycle() * CP_PWM_FREQ);
+    Serial.println(highTime);
     
     //Set up our timer. We use IDF here because arduino makes too many assumptions
     timer_config_t tConfig = {
@@ -40,7 +43,7 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
     TIMERG0.int_clr_timers.t0 = 1;
     TIMERG0.hw_timer[0].config.alarm_en = 1;
 
-    short nextActionDelay = 0;
+    int nextActionDelay = 0;
 
     switch(nextAction){
         case Action::PulseHigh:
@@ -51,7 +54,7 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
         
         case Action::Sample:
             digitalWrite(32, HIGH);
-            lastCpValue = analogRead(CP_READ_PIN);
+            lastCpValue = adc1_get_raw(ADC1_CHANNEL_5); //analogRead(CP_READ_PIN);
             digitalWrite(32, LOW);
             nextActionDelay = highTime - 30;
             nextAction = Action::PulseLow;
@@ -76,7 +79,7 @@ void ControlPilot::BeginPulse(){
 
     ESP_ERROR_CHECK(timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000));
     ESP_ERROR_CHECK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
-    ESP_ERROR_CHECK(timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, Pulse, NULL, 0, NULL));
+    ESP_ERROR_CHECK(timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, Pulse, NULL, ESP_INTR_FLAG_IRAM ,NULL));
     ESP_ERROR_CHECK(timer_start(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0));
     
     pulsing = true;
@@ -97,16 +100,10 @@ void ControlPilot::EndPulse(){
 CpState ControlPilot::State(){
     int cpValue;
 
-    /*if(pulsing){
-        if(adcBusy(CP_READ_PIN))
-            cpValue = ControlPilot::lastCpValue;
-        else
-            cpValue = adcEnd(CP_READ_PIN);
-    }
+    if(pulsing)
+        cpValue = ControlPilot::lastCpValue;
     else
-        cpValue = analogRead(CP_READ_PIN);*/
-    
-    cpValue = ControlPilot::lastCpValue;
+        cpValue = analogRead(CP_READ_PIN);
     
     if(cpValue >= CP_IDLE_MIN){
         return CpState::Idle;  

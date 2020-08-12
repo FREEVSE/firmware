@@ -24,17 +24,17 @@ void GFCI::EndTest(){
 
 bool GFCI::SelfTest(){
     BeginTest();
-    delay(500);
+    delay(2500);
     EndTest();
-    delay(1000);
+    
 
     if(State() != false){
         return false;
     }
-
+    delay(2500);
     Reset();
 
-    return true;
+    return State();
 }
 
 void GFCI::Reset(){

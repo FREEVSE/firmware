@@ -9,7 +9,6 @@
 #define HANDLE_ERROR(msg)\
     lastError = msg;\
     trigger(EVT_ERROR);\
-    return;
 
 ChargerAtm & ChargerAtm::begin(){
     const static state_t state_table[] PROGMEM = {
@@ -33,19 +32,28 @@ void ChargerAtm::cycle(){
 }
 
 void ChargerAtm::EnterPOST(){
+    /*
     //GFCI test
     Serial.println("Starting GFCI self test");
-    if(!GFCI::SelfTest()) { HANDLE_ERROR("GFCI self test failed") }
+    if(!GFCI::SelfTest()) { 
+        HANDLE_ERROR("GFCI self test failed"); 
+        return;
+    }
         
     //Close CTR to test GND and determine L1/2
     digitalWrite(CTR_ENER_PIN, HIGH);
     delay(500);
 
-    if(!ACDetector::IsL1Present()) { HANDLE_ERROR("No earth") }
+    if(!ACDetector::IsL1Present()) { 
+        HANDLE_ERROR("No earth"); 
+        digitalWrite(CTR_ENER_PIN, LOW);
+        return;
+    }
+
     if(ACDetector::IsL2Present()) { level = Level::L2; }
 
     digitalWrite(CTR_ENER_PIN, LOW);
-
+    */
     state(IDLE);
 }
 
