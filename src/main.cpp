@@ -12,12 +12,14 @@
 #include <GFCI.h>
 #include <ControlPilot.h>
 #include <ACDetector.h>
+#include <LCD.h>
 
 //#include <WiFiManager.h>
 
 DHT* dht;
 CommandHandler<> serialCommandHandler = CommandHandler<>();
 ChargerAtm stateMachine;
+
 
 //Initializes and tests the meteorological sensor
 void ReadMet(){ 
@@ -101,6 +103,9 @@ void setup() {
   //ControlPilot::BeginPulse();
 
   //WiFiManager::Init();
+
+  LCD::Init();
+  LCD::SetWifiState(true);
 }
 
 void loop() {

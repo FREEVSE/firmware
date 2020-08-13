@@ -5,6 +5,7 @@
 #include <ControlPilot.h>
 #include <GFCI.h>
 #include <ACDetector.h>
+#include <LCD.h>
 
 #define HANDLE_ERROR(msg)\
     lastError = msg;\
@@ -32,10 +33,13 @@ void ChargerAtm::cycle(){
 }
 
 void ChargerAtm::EnterPOST(){
-    /*
+    #ifndef NO_POST
+    LCD::PrintStatus("Self test...");
+
     //GFCI test
     Serial.println("Starting GFCI self test");
-    if(!GFCI::SelfTest()) { 
+    if(!GFCI::SelfTest()) {
+        LCD::PrintStatus("GFCI test failed!");
         HANDLE_ERROR("GFCI self test failed"); 
         return;
     }
@@ -45,6 +49,7 @@ void ChargerAtm::EnterPOST(){
     delay(500);
 
     if(!ACDetector::IsL1Present()) { 
+        LCD::PrintStatus("No earth!");
         HANDLE_ERROR("No earth"); 
         digitalWrite(CTR_ENER_PIN, LOW);
         return;
@@ -52,20 +57,26 @@ void ChargerAtm::EnterPOST(){
 
     if(ACDetector::IsL2Present()) { level = Level::L2; }
 
+    #endif
+
     digitalWrite(CTR_ENER_PIN, LOW);
-    */
+    
+    LCD::PrintCapabilities(Configuration::GetMaxOutputAmps(), !(bool)(int)level);
     state(IDLE);
 }
 
 void ChargerAtm::EnterIdle(){
+    LCD::PrintStatus("Idle");
     ControlPilot::EndPulse();
 }
 
 void ChargerAtm::EnterVehicleDetected(){
+    LCD::PrintStatus("Vehicle detected");
     ControlPilot::BeginPulse();
 }
 
 void ChargerAtm::EnterCharging(){
+    LCD::PrintStatus("Charging");
     digitalWrite(CTR_ENER_PIN, HIGH);
     delay(250); //Give the contactor some time to close
 }
@@ -75,6 +86,7 @@ void ChargerAtm::ExitCharging(){
 }
 
 void ChargerAtm::EnterError(){
+    LCD::PrintStatus(lastError);
     Serial.println(lastError);
 }
 
