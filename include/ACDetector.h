@@ -1,3 +1,5 @@
+#pragma once
+
 class ACDetector{
     public:
         static void Init();

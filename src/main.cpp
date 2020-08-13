@@ -9,6 +9,7 @@
 #include <Configuration.h>
 
 //Hardware modules
+#include <Contactor.h>
 #include <GFCI.h>
 #include <ControlPilot.h>
 #include <ACDetector.h>
@@ -16,15 +17,15 @@
 
 //#include <WiFiManager.h>
 
-DHT* dht;
+DHT dht(DHT_PIN, DHT22);
 CommandHandler<> serialCommandHandler = CommandHandler<>();
 ChargerAtm stateMachine;
 
 
 //Initializes and tests the meteorological sensor
 void ReadMet(){ 
-  float hum = dht->readHumidity();
-  float temp = dht->readTemperature();
+  float hum = dht.readHumidity();
+  float temp = dht.readTemperature();
 
   if (isnan(hum) || isnan(temp)) {
     Serial.println(F("Failed to read from DHT sensor!"));
@@ -52,8 +53,6 @@ void RegisterCommands(){
 }
 
 void setup() {
-  pinMode(32, OUTPUT);
-
   pinMode(CTR_ENER_PIN, OUTPUT);
 
   //Set analog read res to a lower value for slightly more linear curve.
@@ -76,6 +75,8 @@ void setup() {
   Serial.print(Configuration::GetMaxOutputAmps());
   Serial.println("A");
 
+  Contactor::Init();
+
   Serial.println(" - Initializing GFCI...");
   GFCI::Init();
 
@@ -85,27 +86,24 @@ void setup() {
   Serial.println(" - Initializeing AC detector...");
   ACDetector::Init();
 
-  //Init met sensor
-  /*Serial.println(" - Initializing environmental sensor...");
-  dht = new DHT(DHT_PIN, DHT22);
-  dht->begin();
-  
-  if(!dht->read()) {//Test DHT sensor
-    Serial.println("  -> !!! Error initializing met sensor !!!");
-  }*/
+  Serial.println(" - Initializing LCD...");
+  LCD::Init();
+  LCD::SetWifiState(false);
 
-  //Reset the GFCI
-  GFCI::Reset();
+  //Init met sensor
+  Serial.println(" - Initializing environmental sensor...");
+  dht.begin();
+  
+  if(!dht.read()) {//Test DHT sensor
+    Serial.println("  -> !!! Error initializing met sensor !!!");
+  }
 
   stateMachine.trace(Serial);
   stateMachine.begin();
 
-  //ControlPilot::BeginPulse();
-
   //WiFiManager::Init();
 
-  LCD::Init();
-  LCD::SetWifiState(true);
+
 }
 
 void loop() {

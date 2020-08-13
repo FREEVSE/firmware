@@ -1,3 +1,5 @@
+#pragma once
+
 #include <LiquidCrystal_I2C.h>
 
 #define LCD_COLS 20

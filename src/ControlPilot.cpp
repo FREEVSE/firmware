@@ -17,7 +17,6 @@ volatile int ControlPilot::lastCpValue = 0;
 
 void ControlPilot::Init(){
     pinMode(CP_PWM_PIN, OUTPUT);
-    pinMode(32, OUTPUT);
 
     //adcAttachPin(CP_READ_PIN);
     adc1_config_width(ADC_WIDTH_9Bit);
@@ -56,9 +55,7 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
         
         //Sample the CP line
         case Action::Sample:
-            digitalWrite(32, HIGH);
             lastCpValue = adc1_get_raw(ADC1_CHANNEL_5); //analogRead(CP_READ_PIN);
-            digitalWrite(32, LOW);
             nextActionDelay = highTime - 30;
             nextAction = Action::PulseLow;
             break;

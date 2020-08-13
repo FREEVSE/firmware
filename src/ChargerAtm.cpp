@@ -3,6 +3,7 @@
 #include <Configuration.h>
 
 #include <ControlPilot.h>
+#include <Contactor.h>
 #include <GFCI.h>
 #include <ACDetector.h>
 #include <LCD.h>
@@ -39,19 +40,17 @@ void ChargerAtm::EnterPOST(){
     //GFCI test
     Serial.println("Starting GFCI self test");
     if(!GFCI::SelfTest()) {
-        LCD::PrintStatus("GFCI test failed!");
-        HANDLE_ERROR("GFCI self test failed"); 
+        HANDLE_ERROR("GFCI test failed"); 
         return;
     }
         
     //Close CTR to test GND and determine L1/2
-    digitalWrite(CTR_ENER_PIN, HIGH);
+    Contactor::Close();
     delay(500);
 
     if(!ACDetector::IsL1Present()) { 
-        LCD::PrintStatus("No earth!");
         HANDLE_ERROR("No earth"); 
-        digitalWrite(CTR_ENER_PIN, LOW);
+        Contactor::Open();
         return;
     }
 
@@ -59,7 +58,7 @@ void ChargerAtm::EnterPOST(){
 
     #endif
 
-    digitalWrite(CTR_ENER_PIN, LOW);
+    Contactor::Open();
     
     LCD::PrintCapabilities(Configuration::GetMaxOutputAmps(), !(bool)(int)level);
     state(IDLE);
@@ -77,12 +76,12 @@ void ChargerAtm::EnterVehicleDetected(){
 
 void ChargerAtm::EnterCharging(){
     LCD::PrintStatus("Charging");
-    digitalWrite(CTR_ENER_PIN, HIGH);
+    Contactor::Close();
     delay(250); //Give the contactor some time to close
 }
 
 void ChargerAtm::ExitCharging(){
-    digitalWrite(CTR_ENER_PIN, LOW);
+    Contactor::Open();
 }
 
 void ChargerAtm::EnterError(){
