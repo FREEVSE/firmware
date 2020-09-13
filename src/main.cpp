@@ -15,6 +15,9 @@
 #include <ACDetector.h>
 #include <LCD.h>
 
+//#include <BluFi.h>
+
+
 //#include <WiFiManager.h>
 
 DHT dht(DHT_PIN, DHT22);
@@ -102,7 +105,7 @@ void setup() {
   stateMachine.begin();
 
   //WiFiManager::Init();
-
+  //BluFi::Init();
 
 }
 

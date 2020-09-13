@@ -1,0 +1,4 @@
+class BluFi{
+    public:
+        static void Init();
+};
