@@ -1,5 +1,6 @@
 #include <WiFiManager.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <Configuration.h>
 
 

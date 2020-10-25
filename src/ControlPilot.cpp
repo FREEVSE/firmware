@@ -69,7 +69,7 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
     }
 
     TIMERG0.hw_timer[0].alarm_low = nextActionDelay;    //Set next alarm. Since it's always less than 1000, we can set only the first 32 bits.
-    TIMERG0.hw_timer[0].alarm_high = 0x0;               //Just to be sure
+    TIMERG0.hw_timer[0].alarm_high = 0x0;               //... Just to be sure
     TIMERG0.hw_timer[0].config.alarm_en = 1;            //We need to re-enable the alarm
 }
 

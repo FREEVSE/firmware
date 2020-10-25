@@ -45,3 +45,7 @@ void LCD::PrintCapabilities(u_short amps, bool l1){
     if(l1){ device.print("L1/120V"); }
     else{ device.print("L2/240V"); }
 }
+
+void LCD::StartChargeTimer(float secs = 0){
+
+}

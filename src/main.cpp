@@ -15,7 +15,7 @@
 #include <ACDetector.h>
 #include <LCD.h>
 
-//#include <BluFi.h>
+#include <Bluetooth.h>
 
 
 //#include <WiFiManager.h>
@@ -90,8 +90,8 @@ void setup() {
   ACDetector::Init();
 
   Serial.println(" - Initializing LCD...");
-  LCD::Init();
-  LCD::SetWifiState(false);
+  //LCD::Init();
+  //LCD::SetWifiState(false);
 
   //Init met sensor
   Serial.println(" - Initializing environmental sensor...");
@@ -106,6 +106,7 @@ void setup() {
 
   //WiFiManager::Init();
   //BluFi::Init();
+  Bluetooth::Init();
 
 }
 

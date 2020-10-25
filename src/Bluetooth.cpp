@@ -1,13 +1,30 @@
-#include "BluFi.h"
+#include "Bluetooth.h"
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "esp_blufi_api.h"
+#include "esp_log.h"
+#include "esp_wifi.h"
+
+#include "mbedtls/aes.h"
+#include "mbedtls/dhm.h"
+#include "mbedtls/md5.h"
+
+#include "blufi.h"
 
 #define SERVICE_UUID        "61686c77-920f-4867-a1fb-b8000dd29408"
 #define CHARACTERISTIC_UUID "9f2c8812-4a17-4def-b8e8-1dcfff50f4c2"
 
-void BluFi::Init(){
+void Bluetooth::Init(){
+
     BLEDevice::init("FREEVSE");
+    //esp_ble_gap_register_callback(gap_event_handler);
+    //esp_blufi_register_callbacks(&callbacks);
+
+    Blufi::init();
     BLEServer *pServer = BLEDevice::createServer();
     BLEService *pService = pServer->createService(SERVICE_UUID);
     BLECharacteristic *pCharacteristic = pService->createCharacteristic(

@@ -16,4 +16,5 @@ class LCD{
         static void PrintStatus(const char * status);
         static void SetWifiState(bool state);        
         static void PrintCapabilities(u_short amps, bool l1);
+        static void StartChargeTimer(float secs);
 };
