@@ -26,7 +26,7 @@
 #include "mbedtls/aes.h"
 #include "mbedtls/dhm.h"
 #include "mbedtls/md5.h"
-#include "esp_crc.h"
+#include "esp32/rom/crc.h"
 
 /*
    The SEC_TYPE_xxx is for self-defined packet data type in the procedure of "BLUFI negotiate key"
@@ -176,7 +176,7 @@ int blufi_aes_decrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 uint16_t blufi_crc_checksum(uint8_t iv8, uint8_t *data, int len)
 {
     /* This iv8 ignore, not used */
-    return esp_crc16_be(0, data, len);
+    return crc16_be(0, data, len);
 }
 
 esp_err_t blufi_security_init(void)

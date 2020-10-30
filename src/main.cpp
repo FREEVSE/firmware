@@ -15,6 +15,7 @@
 #include <ACDetector.h>
 #include <LCD.h>
 
+#include <WiFiManager.h>
 #include <Bluetooth.h>
 
 
@@ -104,8 +105,7 @@ void setup() {
   stateMachine.trace(Serial);
   stateMachine.begin();
 
-  //WiFiManager::Init();
-  //BluFi::Init();
+  WiFiManager::Init();
   Bluetooth::Init();
 
 }

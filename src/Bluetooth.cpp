@@ -2,16 +2,7 @@
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
-#include "esp_blufi_api.h"
-#include "esp_log.h"
-#include "esp_wifi.h"
-
-#include "mbedtls/aes.h"
-#include "mbedtls/dhm.h"
-#include "mbedtls/md5.h"
+#include <WiFi.h>
 
 #include "blufi.h"
 
@@ -24,7 +15,9 @@ void Bluetooth::Init(){
     //esp_ble_gap_register_callback(gap_event_handler);
     //esp_blufi_register_callbacks(&callbacks);
 
-    Blufi::init();
+    if(WiFi.isConnected())
+      Blufi::init();
+      
     BLEServer *pServer = BLEDevice::createServer();
     BLEService *pService = pServer->createService(SERVICE_UUID);
     BLECharacteristic *pCharacteristic = pService->createCharacteristic(
