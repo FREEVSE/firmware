@@ -20,6 +20,4 @@ void Cmd_AC(CommandParameter &params);
 //General
 void Cmd_ReadSettings(CommandParameter &params);
 
-void Cmd_WiFiConnect(CommandParameter &params);
-
 constexpr unsigned int hash(const char *s, int off);

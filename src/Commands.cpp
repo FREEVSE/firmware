@@ -165,7 +165,3 @@ void Cmd_ReadSettings(CommandParameter &params){
     Serial.print("Password: ");
     Serial.println(Configuration::GetWiFiPass());
 }
-
-void Cmd_WiFiConnect(CommandParameter &params){
-    WiFiManager::Connect();
-}

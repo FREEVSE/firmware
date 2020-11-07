@@ -46,7 +46,6 @@ void ReadMet(){
 void RegisterCommands(){
   //Set configuration variables
   serialCommandHandler.AddCommand(F("set"), Cmd_Set);
-  serialCommandHandler.AddCommand(F("WiFi_Connect"), Cmd_WiFiConnect);
 
   //GFCI
   serialCommandHandler.AddCommand(F("GFCI"), Cmd_GFCI);
