@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Preferences.h>
 
 #pragma once

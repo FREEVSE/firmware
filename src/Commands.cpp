@@ -25,8 +25,6 @@ constexpr unsigned int hash(const char *s, int off = 0) {
     return !s[off] ? 5381 : (hash(s, off+1)*33) ^ s[off];                           
 } 
 
-#pragma region Set commands
-
 /**
  * Handles the "set" serial command
  *
@@ -116,7 +114,7 @@ void SetSSID(CommandParameter &params){
 void SetPass(CommandParameter &params){
     const char *pass = params.NextParameter();
 
-    if(pass = NULL){
+    if(pass == NULL){
         Serial.println(noValueError);
         return;
     }
@@ -125,10 +123,6 @@ void SetPass(CommandParameter &params){
     Serial.print(F("Set WiFi password to: "));
     Serial.println(pass);
 }
-
-#pragma endregion
-
-#pragma region GFCI commands
 
 void Cmd_GFCI(CommandParameter &params){
     const char *cmd = params.NextParameter();
@@ -145,9 +139,6 @@ void Cmd_GFCI(CommandParameter &params){
     }
 }
 
-#pragma endregion
-
-#pragma region ACDetector commands
 void Cmd_AC(CommandParameter &params){
     const char *cmd = params.NextParameter();
 
@@ -162,7 +153,6 @@ void Cmd_AC(CommandParameter &params){
     }
 }
 
-#pragma endregion
 void Cmd_ReadSettings(CommandParameter &params){
     Serial.println("**Charge Settings**");
     Serial.print("Max amp output: ");
@@ -174,8 +164,4 @@ void Cmd_ReadSettings(CommandParameter &params){
 
     Serial.print("Password: ");
     Serial.println(Configuration::GetWiFiPass());
-}
-
-void Cmd_WiFiConnect(CommandParameter &params){
-    WiFiManager::Connect();
 }

@@ -30,6 +30,6 @@ class ControlPilot{
         static void IRAM_ATTR Pulse(void *);
         static Action nextAction;        
         static bool pulsing;
-        static int lastCpValue;
+        static volatile int lastCpValue;
         static int highTime;
 };

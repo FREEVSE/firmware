@@ -4,6 +4,7 @@
 
 #include <driver/timer.h>
 #include <driver/gpio.h>
+#include <driver/adc.h>
 #include <soc/soc.h>
 
 //TODO Fix all the hardcoded timer groups and numbers
@@ -12,14 +13,14 @@ Action ControlPilot::nextAction;
 bool ControlPilot::pulsing = false;
 int ControlPilot::highTime = 0;
 
-int ControlPilot::lastCpValue = 0;
+volatile int ControlPilot::lastCpValue = 0;
 
 void ControlPilot::Init(){
     pinMode(CP_PWM_PIN, OUTPUT);
-    pinMode(32, OUTPUT);
-    digitalWrite(CP_PWM_PIN, LOW);
-    pinMode(32, OUTPUT);
-    adcAttachPin(CP_READ_PIN);
+
+    //adcAttachPin(CP_READ_PIN);
+    adc1_config_width(ADC_WIDTH_9Bit);
+    adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_DB_0);
 
     ControlPilot::highTime = (int)(Configuration::GetCpPwmDutyCycle() * CP_PWM_FREQ);
     
@@ -34,29 +35,32 @@ void ControlPilot::Init(){
     };
     ESP_ERROR_CHECK(timer_init(TIMER_GROUP_0, TIMER_0, &tConfig));
     ESP_ERROR_CHECK(timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0)); //Timer will reset to this value on alarm
+    ESP_ERROR_CHECK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
+    ESP_ERROR_CHECK(timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, Pulse, NULL, ESP_INTR_FLAG_IRAM ,NULL));
 }
+
 
 void IRAM_ATTR ControlPilot::Pulse(void* arg){
     TIMERG0.int_clr_timers.t0 = 1;
-    TIMERG0.hw_timer[0].config.alarm_en = 1;
 
-    short nextActionDelay = 0;
+    int nextActionDelay = 0;
 
     switch(nextAction){
+        //Pulse the CP line HIGH
         case Action::PulseHigh:
             digitalWrite(CP_PWM_PIN, LOW);
             nextActionDelay = 30;
             nextAction = Action::Sample;
             break;
         
+        //Sample the CP line
         case Action::Sample:
-            digitalWrite(32, HIGH);
-            adcStart(CP_READ_PIN);
-            digitalWrite(32, LOW);
+            lastCpValue = adc1_get_raw(ADC1_CHANNEL_5); //analogRead(CP_READ_PIN);
             nextActionDelay = highTime - 30;
             nextAction = Action::PulseLow;
             break;
 
+        //CP line back to LOW
         case Action::PulseLow:
             digitalWrite(CP_PWM_PIN, HIGH);
             nextActionDelay = CP_PWM_FREQ - highTime;
@@ -64,8 +68,9 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
             break;
     }
 
-    TIMERG0.hw_timer[0].alarm_low = nextActionDelay;
-    TIMERG0.hw_timer[0].alarm_high = 0x0;
+    TIMERG0.hw_timer[0].alarm_low = nextActionDelay;    //Set next alarm. Since it's always less than 1000, we can set only the first 32 bits.
+    TIMERG0.hw_timer[0].alarm_high = 0x0;               //... Just to be sure
+    TIMERG0.hw_timer[0].config.alarm_en = 1;            //We need to re-enable the alarm
 }
 
 void ControlPilot::BeginPulse(){
@@ -75,8 +80,6 @@ void ControlPilot::BeginPulse(){
     nextAction = Action::PulseHigh;
 
     ESP_ERROR_CHECK(timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000));
-    ESP_ERROR_CHECK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
-    ESP_ERROR_CHECK(timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, Pulse, NULL, 0, NULL));
     ESP_ERROR_CHECK(timer_start(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0));
     
     pulsing = true;
@@ -87,7 +90,6 @@ void ControlPilot::EndPulse(){
         return;
 
     ESP_ERROR_CHECK(timer_pause(TIMER_GROUP_0, TIMER_0));
-    ESP_ERROR_CHECK(timer_disable_intr(TIMER_GROUP_0, TIMER_0));
     
     digitalWrite(CP_PWM_PIN, LOW);
 
@@ -97,16 +99,10 @@ void ControlPilot::EndPulse(){
 CpState ControlPilot::State(){
     int cpValue;
 
-    if(pulsing){
-        if(adcBusy(CP_READ_PIN))
-            cpValue = ControlPilot::lastCpValue;
-        else
-            cpValue = adcEnd(CP_READ_PIN);
-    }
+    if(pulsing)
+        cpValue = ControlPilot::lastCpValue;
     else
         cpValue = analogRead(CP_READ_PIN);
-    
-    ControlPilot::lastCpValue = cpValue;
     
     if(cpValue >= CP_IDLE_MIN){
         return CpState::Idle;  

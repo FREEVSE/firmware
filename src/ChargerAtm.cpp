@@ -3,13 +3,14 @@
 #include <Configuration.h>
 
 #include <ControlPilot.h>
+#include <Contactor.h>
 #include <GFCI.h>
 #include <ACDetector.h>
+#include <LCD.h>
 
 #define HANDLE_ERROR(msg)\
     lastError = msg;\
     trigger(EVT_ERROR);\
-    return;
 
 ChargerAtm & ChargerAtm::begin(){
     const static state_t state_table[] PROGMEM = {
@@ -33,40 +34,58 @@ void ChargerAtm::cycle(){
 }
 
 void ChargerAtm::EnterPOST(){
+    #ifndef NO_POST
+    LCD::PrintStatus("Self test...");
+
     //GFCI test
     Serial.println("Starting GFCI self test");
-    if(!GFCI::SelfTest()) { HANDLE_ERROR("GFCI self test failed") }
+    if(!GFCI::SelfTest()) {
+        HANDLE_ERROR("GFCI test failed"); 
+        return;
+    }
         
     //Close CTR to test GND and determine L1/2
-    digitalWrite(CTR_ENER_PIN, HIGH);
+    Contactor::Close();
     delay(500);
 
-    if(!ACDetector::IsL1Present()) { HANDLE_ERROR("No earth") }
+    if(!ACDetector::IsL1Present()) { 
+        HANDLE_ERROR("No earth"); 
+        Contactor::Open();
+        return;
+    }
+
     if(ACDetector::IsL2Present()) { level = Level::L2; }
 
-    digitalWrite(CTR_ENER_PIN, LOW);
+    #endif
 
+    Contactor::Open();
+    
+    LCD::PrintCapabilities(Configuration::GetMaxOutputAmps(), !(bool)(int)level);
     state(IDLE);
 }
 
 void ChargerAtm::EnterIdle(){
+    LCD::PrintStatus("Idle");
     ControlPilot::EndPulse();
 }
 
 void ChargerAtm::EnterVehicleDetected(){
+    LCD::PrintStatus("Vehicle detected");
     ControlPilot::BeginPulse();
 }
 
 void ChargerAtm::EnterCharging(){
-    digitalWrite(CTR_ENER_PIN, HIGH);
+    LCD::PrintStatus("Charging");
+    Contactor::Close();
     delay(250); //Give the contactor some time to close
 }
 
 void ChargerAtm::ExitCharging(){
-    digitalWrite(CTR_ENER_PIN, LOW);
+    Contactor::Open();
 }
 
 void ChargerAtm::EnterError(){
+    LCD::PrintStatus(lastError);
     Serial.println(lastError);
 }
 
@@ -94,6 +113,8 @@ int ChargerAtm::event(int id){
 
         return 0;
     }
+
+    return 0;
 }
 
 void ChargerAtm::action(int id){

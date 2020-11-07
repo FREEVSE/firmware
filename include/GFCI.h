@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Arduino.h>
 
 #define GFCI_ST_SET true
