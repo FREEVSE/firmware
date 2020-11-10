@@ -77,14 +77,18 @@ void Blufi::init(){
     //Check if the BT stack is init and enabled, if not we do it here
     if(esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED){
         ret = esp_bluedroid_init();
-        if(ret){ BLUFI_ERROR("%s Bluedroid init failed, error code = %x\n", __func__, ret); }
-        return;
+        if(ret){ 
+            BLUFI_ERROR("%s Bluedroid init failed, error code = %x\n", __func__, ret); 
+            return;
+        }
     }
 
     if(esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED){
         ret = esp_bluedroid_enable();
-        if(ret){ BLUFI_ERROR("%s Bluedroid enable failed, error code = %x\n", __func__, ret); }
-        return;
+        if(ret){
+            BLUFI_ERROR("%s Bluedroid enable failed, error code = %x\n", __func__, ret);
+            return;
+        }
     }
 
     ret = esp_ble_gap_register_callback(gap_event_handler);

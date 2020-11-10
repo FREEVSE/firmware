@@ -10,12 +10,13 @@ class WiFiManager{
     public:
         static void Init();
         static void Connect();
+        static bool IsUpdatePending;
     private:
         static esp_err_t ipEventHandler(void *ctx, system_event_t *event);
         static void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
         static void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);
         static void UpdateMonitorTask(void* param);
-        static void DoUpdate(const char* uri);
+        static esp_err_t DoUpdate(const char* uri);
         static semver_t currentVersion;
         static EventGroupHandle_t wifiEvtGrp;
         static TaskHandle_t updateTask;

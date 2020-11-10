@@ -1,5 +1,6 @@
 #include <Commands.h>
 #include <CommandHandler.h>
+#include <TCPCommandHandler.h>
 #include <Configuration.h>
 
 #include <GFCI.h>

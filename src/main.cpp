@@ -65,7 +65,9 @@ void setup() {
   Wire.begin(SDA_PIN, SCL_PIN);
 
   Serial.begin(115200);
-  Serial.println("EVSE v0.1 - © 2019 Matthew Goulart");
+  Serial.print("FREEVSE v");
+  Serial.print(FREEVSE_VERSION);
+  Serial.println(" - © 2019 Matthew Goulart");
   Serial.println("Beginning initialization...");
   Serial.println(" - Loading configuration data from flash memory...");  
 
@@ -110,6 +112,8 @@ void setup() {
 }
 
 void loop() {
+  if(WiFiManager::IsUpdatePending) { esp_restart(); }
+  
   serialCommandHandler.Process();
 
   stateMachine.cycle();

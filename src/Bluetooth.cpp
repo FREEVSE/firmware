@@ -15,7 +15,7 @@ void Bluetooth::Init(){
     //esp_ble_gap_register_callback(gap_event_handler);
     //esp_blufi_register_callbacks(&callbacks);
 
-    if(WiFi.isConnected())
+    //if(!WiFi.isConnected())
       Blufi::init();
       
     BLEServer *pServer = BLEDevice::createServer();
