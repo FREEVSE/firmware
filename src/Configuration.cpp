@@ -1,5 +1,5 @@
 #include <Configuration.h>
-#include <Preferences.h>
+//#include <Preferences.h>
 
 Preferences Configuration::prefs = Preferences();
 
@@ -32,6 +32,24 @@ String Configuration::GetWiFiPass(){
 
 void Configuration::SetWiFiPass(const char * pass){
     prefs.putString("WIFI_PASS", pass);
+}
+
+//Updates
+bool Configuration::GetAutoUpdate(){
+    return prefs.getBool("AUTO_UPDATE", false);
+}
+
+void Configuration::SetAutoUpdate(bool autoUpd){
+    prefs.putBool("AUTO_UPDATE", autoUpd);
+}
+
+short Configuration::GetFailedUpdateCount(){
+    return prefs.getShort("FAILED_UPDATE_COUNT", 0);
+}
+
+void Configuration::SetFailedUpdateCount(short count = 1){
+    count += GetFailedUpdateCount();
+    prefs.putShort("FAILED_UPDATE_COUNT", count);
 }
 
 //Control Pilot PWM signal duty cycle

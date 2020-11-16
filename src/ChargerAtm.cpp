@@ -1,12 +1,15 @@
+#include <atomic>
+
 #include <ChargerAtm.h>
-#include <Automaton.h>
+//#include <Automaton.h>
 #include <Configuration.h>
 
-#include <ControlPilot.h>
+//#include <ControlPilot.h>
 #include <Contactor.h>
 #include <GFCI.h>
 #include <ACDetector.h>
 #include <LCD.h>
+#include <WiFiManager.h>
 
 #define HANDLE_ERROR(msg)\
     lastError = msg;\
@@ -14,13 +17,14 @@
 
 ChargerAtm & ChargerAtm::begin(){
     const static state_t state_table[] PROGMEM = {
-        /*                          ON_ENTER        ON_LOOP         ON_EXIT     EVT_VEHICLE_DISCONNECTED     EVT_VEHICLE_DETECTED    EVT_CHARGE_REQUESTED   EVT_NO_EARTH   EVT_GFCI_TRIP   EVT_ERROR     ELSE */
-        /* POST */                  ENT_POST,            -1,             -1,                          -1,                      -1,                     -1,            -1,             -1,      ERROR,      -1,
-        /* IDLE */                  ENT_IDLE,            -1,             -1,                          -1,        VEHICLE_DETECTED,                     -1,            -1,          FAULT,      ERROR,      -1,
-        /* VEHICLE_DETECTED */        ENT_VD,       LOOP_VD,         EXT_VD,                        IDLE,                      -1,               CHARGING,            -1,          FAULT,      ERROR,      -1,
-        /* CHARGING */          ENT_CHARGING,            -1,   EXT_CHARGING,                        IDLE,        VEHICLE_DETECTED,                     -1,         ERROR,          FAULT,      ERROR,      -1,
-        /* FAULT */                       -1,            -1,             -1,                          -1,                      -1,                     -1,            -1,             -1,      ERROR,      -1,
-        /* ERROR */                ENT_ERROR,            -1,             -1,                          -1,                      -1,                     -1,            -1,             -1,         -1,      -1
+/*                          ON_ENTER    ON_LOOP         ON_EXIT     EVT_VEHICLE_DISCONNECTED     EVT_VEHICLE_DETECTED    EVT_CHARGE_REQUESTED   EVT_UPDATE   EVT_NO_EARTH   EVT_GFCI_TRIP   EVT_ERROR     ELSE */
+/* POST */                  ENT_POST,        -1,             -1,                          -1,                      -1,                     -1,          -1,            -1,             -1,      ERROR,      -1,
+/* IDLE */                  ENT_IDLE,        -1,             -1,                          -1,        VEHICLE_DETECTED,                     -1,    UPDATING,            -1,          FAULT,      ERROR,      -1,
+/* VEHICLE_DETECTED */        ENT_VD,   LOOP_VD,         EXT_VD,                        IDLE,                      -1,               CHARGING,          -1,            -1,          FAULT,      ERROR,      -1,
+/* CHARGING */          ENT_CHARGING,        -1,   EXT_CHARGING,                        IDLE,        VEHICLE_DETECTED,                     -1,          -1,         ERROR,          FAULT,      ERROR,      -1,
+/* UPDATING */          ENT_UPDATING,        -1,             -1,                          -1,                      -1,                     -1,          -1,            -1,             -1,      ERROR,      -1,
+/* FAULT */                       -1,        -1,             -1,                          -1,                      -1,                     -1,          -1,            -1,             -1,      ERROR,      -1,
+/* ERROR */                ENT_ERROR,        -1,             -1,                          -1,                      -1,                     -1,          -1,            -1,             -1,         -1,      -1
     };
 
     Machine::begin(state_table, ELSE);
@@ -84,6 +88,28 @@ void ChargerAtm::ExitCharging(){
     Contactor::Open();
 }
 
+void ChargerAtm::EnterUpdating(){
+    auto res = WiFiManager::CheckUpdate();
+
+    if(std::get<0>(res)){
+        LCD::PrintStatus("Updating...");
+
+        if(WiFiManager::DoUpdate(std::get<1>(res)) != ESP_OK){
+            Configuration::SetFailedUpdateCount();
+            LCD::PrintStatus("Update failed!");
+        }
+        else { LCD::PrintStatus("Updated! Restarting..."); }
+
+        delay(10000);
+        esp_restart();
+
+        //We should never make it here...
+        HANDLE_ERROR("MANUAL RESTART");
+    }
+
+    state(IDLE);
+}
+
 void ChargerAtm::EnterError(){
     LCD::PrintStatus(lastError);
     Serial.println(lastError);
@@ -101,6 +127,11 @@ int ChargerAtm::event(int id){
             
         case EVT_CHARGE_REQUESTED:
             return cpState == CpState::Charge || cpState == CpState::ChargeWithVentilation;
+
+        case EVT_UPDATE:
+            return WiFiManager::IsUpdateAvailable.load() &&                     //Check if an update was found previously
+                    Configuration::GetAutoUpdate() &&                           //Make sure we should be updating automatically
+                    Configuration::GetFailedUpdateCount() <= UPDATE_RETY_COUNT; //Make sure we haven't tried this version too many times
 
         case EVT_NO_EARTH:
             return !ACDetector::IsL1Present();
@@ -124,12 +155,13 @@ void ChargerAtm::action(int id){
         case ENT_VD: EnterVehicleDetected(); break;
         case ENT_CHARGING: EnterCharging(); break;
         case EXT_CHARGING: ExitCharging(); break;
+        case ENT_UPDATING: EnterUpdating(); break;
         case ENT_ERROR: EnterError(); break;
     }
 }
 
 ChargerAtm & ChargerAtm::trace( Stream & stream ) {
   Machine::setTrace( &stream, atm_serial_debug::trace,
-    "CHARGER\0EVT_VEHICLE_DISCONNECTED\0EVT_VEHICLE_DETECTED\0EVT_CHARGE_REQUESTED\0EVT_NO_EARTH\0EVT_GFCI_TRIP\0EVT_ERROR\0ELSE\0POST\0IDLE\0VEHICLE_DETECTED\0CHARGING\0FAULT\0ERROR");
+    "CHARGER\0EVT_VEHICLE_DISCONNECTED\0EVT_VEHICLE_DETECTED\0EVT_CHARGE_REQUESTED\0EVT_UPDATE\0EVT_NO_EARTH\0EVT_GFCI_TRIP\0EVT_ERROR\0ELSE\0POST\0IDLE\0VEHICLE_DETECTED\0CHARGING\0UPDATING\0FAULT\0ERROR");
   return *this;
 }

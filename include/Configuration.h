@@ -2,9 +2,21 @@
 
 #include <Preferences.h>
 
-#pragma once
-
+//Development switches
 #define DEBUG
+#define NO_POST //Disables power on self test. Will default to 120v mode.
+#define NO_SAFETY_CHECKS //Disables monitoring of protected earth and GFCI
+
+//Firmware version
+#define FREEVSE_VERSION "1.0.0"
+
+//Hardware version
+#define FREEVSE_BOARD "1.0.0"
+
+//Update settings
+#define FREEVSE_SERVER "freevse.org"
+#define FREEVSE_SERVER_SCHEME "https"
+#define UPDATE_RETY_COUNT 3
 
 //Pin assignments
 #define SDA_PIN 25
@@ -64,11 +76,19 @@ class Configuration{
         static void SetMaxOutputAmps(short val);
         static float GetCpPwmDutyCycle();
 
+        //Wifi
         static String GetWiFiSSID();
         static void SetWiFiSSID(const char * ssid);
 
         static String GetWiFiPass();
         static void SetWiFiPass(const char * pass);
+
+        //Updates
+        static bool GetAutoUpdate();
+        static void SetAutoUpdate(bool autoUpd);
+
+        static short GetFailedUpdateCount();
+        static void SetFailedUpdateCount(short count = 1);
 
         static void Save();
 

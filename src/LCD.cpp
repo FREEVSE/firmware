@@ -1,6 +1,5 @@
-#include "Arduino.h"
-#include <LiquidCrystal_I2C.h>
 #include <LCD.h>
+//#include <LiquidCrystal_I2C.h>
 
 #define LCD_CLEAR_STATUS\
     device.setCursor(0, 0);\

@@ -7,13 +7,14 @@ class ChargerAtm: public Machine{
     public:
         ChargerAtm(void) : Machine(){};
 
-        enum { POST, IDLE, VEHICLE_DETECTED, CHARGING, FAULT, ERROR}; //States
-        enum { EVT_VEHICLE_DISCONNECTED, EVT_VEHICLE_DETECTED, EVT_CHARGE_REQUESTED, EVT_NO_EARTH, EVT_GFCI_TRIP, EVT_ERROR, ELSE }; //Events
+        enum { POST, IDLE, VEHICLE_DETECTED, CHARGING, UPDATING, FAULT, ERROR}; //States
+        enum { EVT_VEHICLE_DISCONNECTED, EVT_VEHICLE_DETECTED, EVT_CHARGE_REQUESTED, EVT_UPDATE, EVT_NO_EARTH, EVT_GFCI_TRIP, EVT_ERROR, ELSE }; //Events
         enum { 
             ENT_POST,
             ENT_IDLE, LOOP_IDLE, EXT_IDLE,
             ENT_VD, LOOP_VD, EXT_VD,
             ENT_CHARGING, EXT_CHARGING,
+            ENT_UPDATING,
             ENT_FAULT,
             ENT_ERROR
         };//Actions
@@ -33,6 +34,7 @@ class ChargerAtm: public Machine{
         void EnterCharging();
         void LoopCharging();
         void ExitCharging();
+        void EnterUpdating();
         void EnterError();
 
         char *lastError;

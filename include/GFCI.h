@@ -13,8 +13,4 @@ class GFCI{
         static bool SelfTest();
         static void Reset();
         static bool State();
-        static void Inhibit(int ms = 1000);
-    private:
-        static hw_timer_t *intTimer;
-        static void IRAM_ATTR EndInhibit();
 };

@@ -1,8 +1,6 @@
 #include <GFCI.h>
 #include <Configuration.h>
-#include <Arduino.h>
-
-hw_timer_t * GFCI::intTimer;
+//#include <Arduino.h>
 
 void GFCI::Init(){
     pinMode(GFI_SET_PIN, OUTPUT);
@@ -10,8 +8,6 @@ void GFCI::Init(){
 
     ledcSetup(GFCI_PWM_CHAN, GFCI_TST_FREQ, 8);
     ledcAttachPin(GFI_TEST_PIN, GFCI_PWM_CHAN);
-
-    intTimer = timerBegin(GFCI_TIMER, 80000, true);
 }
 
 void GFCI::BeginTest(){
@@ -23,6 +19,9 @@ void GFCI::EndTest(){
 }
 
 bool GFCI::SelfTest(){
+    #ifdef NO_SAFETY_CHECKS
+    return true;
+    #else
     BeginTest();
     delay(2500);
     EndTest();
@@ -35,6 +34,7 @@ bool GFCI::SelfTest(){
     Reset();
 
     return State();
+    #endif
 }
 
 void GFCI::Reset(){
@@ -44,25 +44,9 @@ void GFCI::Reset(){
 }
 
 bool GFCI::State(){
+    #ifdef NO_SAFETY_CHECKS
+    return true;
+    #else
     return digitalRead(GFI_INT_PIN);
-}
-
-void GFCI::Inhibit(int ms){
-    pinMode(GFI_INT_PIN, OUTPUT);
-    digitalWrite(GFI_INT_PIN, HIGH);
-    
-    timerRestart(intTimer);
-    timerAttachInterrupt(intTimer, &EndInhibit, true);
-    timerAlarmWrite(intTimer, ms, false);
-    timerAlarmEnable(intTimer);
-}
-
-void IRAM_ATTR GFCI::EndInhibit(){
-    Reset();
-    //digitalWrite(GFI_INT, LOW);
-    pinMode(GFI_INT_PIN, INPUT);
-
-    timerStop(intTimer);
-    timerDetachInterrupt(intTimer);
-    timerAlarmDisable(intTimer);
+    #endif
 }

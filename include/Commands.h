@@ -17,6 +17,9 @@ void Cmd_GFCI(CommandParameter &params);
 
 void Cmd_AC(CommandParameter &params);
 
+//WiFi
+//void Cmd_Update(CommandParameter &params);
+
 //General
 void Cmd_ReadSettings(CommandParameter &params);
 

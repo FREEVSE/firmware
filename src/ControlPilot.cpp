@@ -66,6 +66,8 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
             nextActionDelay = CP_PWM_FREQ - highTime;
             nextAction = Action::PulseHigh;
             break;
+
+        //TODO: Sample CP line when low
     }
 
     TIMERG0.hw_timer[0].alarm_low = nextActionDelay;    //Set next alarm. Since it's always less than 1000, we can set only the first 32 bits.
@@ -112,7 +114,6 @@ CpState ControlPilot::State(){
         return CpState::VehicleDetected;
     }
         
-    
     if(cpValue <= CP_CHARGING_MAX && cpValue >= CP_CHARGING_MIN){
         return CpState::Charge;
     }

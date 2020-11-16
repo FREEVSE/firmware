@@ -11,6 +11,7 @@ volatile unsigned long ACDetector::lastL1Detection = 0;
 volatile unsigned long ACDetector::lastL2Detection = 0;
 
 void ACDetector::Init(){
+    #ifndef NO_SAFETY_CHECKS
     gpio_config_t conf{
         .pin_bit_mask = PIN_MASK,
         .mode = GPIO_MODE_INPUT,
@@ -23,15 +24,23 @@ void ACDetector::Init(){
     gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
     gpio_isr_handler_add((gpio_num_t)SENS_L1_PIN, DetectISR, (void *) SENS_L1_PIN);
     gpio_isr_handler_add((gpio_num_t)SENS_L2_PIN, DetectISR, (void *) SENS_L2_PIN);
-    
+    #endif
 }
 
 bool ACDetector::IsL1Present(){
+    #ifdef NO_SAFETY_CHECKS
+    return true;
+    #else
     return lastL1Detection > micros() - 9000 || digitalRead(SENS_L1_PIN) == LOW;
+    #endif
 }
 
 bool ACDetector::IsL2Present(){
+    #ifdef NO_SAFETY_CHECKS
+    return false;
+    #else
     return lastL2Detection > micros() - 9000 || digitalRead(SENS_L2_PIN) == LOW;
+    #endif
 }
 
 void IRAM_ATTR ACDetector::DetectISR(void * arg){

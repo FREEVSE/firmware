@@ -1,6 +1,5 @@
 #include <Commands.h>
-#include <CommandHandler.h>
-#include <TCPCommandHandler.h>
+//#include <CommandHandler.h>
 #include <Configuration.h>
 
 #include <GFCI.h>
@@ -153,6 +152,18 @@ void Cmd_AC(CommandParameter &params){
         case hash("isL2Present"): Serial.println(ACDetector::IsL1Present()); break;
     }
 }
+
+/*void Cmd_Update(CommandParameter &params){
+    xTaskCreatePinnedToCore(DoUpdate, "UpdateCommand", 512, NULL, 0, NULL, 0);
+}
+
+void DoUpdate(void* params){
+    String bin;
+
+    if(WiFiManager::CheckUpdate(&bin)){
+        WiFiManager::DoUpdate(bin);
+    }
+}*/
 
 void Cmd_ReadSettings(CommandParameter &params){
     Serial.println("**Charge Settings**");

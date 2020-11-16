@@ -111,9 +111,7 @@ void setup() {
 
 }
 
-void loop() {
-  if(WiFiManager::IsUpdatePending) { esp_restart(); }
-  
+void loop() {  
   serialCommandHandler.Process();
 
   stateMachine.cycle();
