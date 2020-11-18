@@ -47,7 +47,7 @@ short Configuration::GetFailedUpdateCount(){
     return prefs.getShort("FAILED_UPDATE_COUNT", 0);
 }
 
-void Configuration::SetFailedUpdateCount(short count = 1){
+void Configuration::SetFailedUpdateCount(short count){
     count += GetFailedUpdateCount();
     prefs.putShort("FAILED_UPDATE_COUNT", count);
 }

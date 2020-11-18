@@ -12,7 +12,7 @@ const char* PROGMEM noCommandError = "No command provided";
 
 /**
  * Produces a (hopefully) unique value from a string
- * to be used in a switch statement. T#pragma region Debug commands
+ * to be used in a switch statement.
 
 #pragma endregion
  * @version	v1.0.0	Sunday, June 21st, 2020.
