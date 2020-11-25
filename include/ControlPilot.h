@@ -5,20 +5,22 @@ enum class CpState{
     VehicleDetected,
     Charge,
     ChargeWithVentilation,
-    Invalid
+    Invalid,
+    Wait
 };
 
 enum Action{
     PulseHigh,
-    Sample,
-    PulseLow
+    SampleHigh,
+    PulseLow,
+    SampleLow
 };
 
 class ControlPilot{
     public:
         static void Init();
 
-        static void BeginPulse();
+        static esp_err_t BeginPulse();
         static void EndPulse();
 
         static CpState State();
@@ -28,6 +30,8 @@ class ControlPilot{
         static void IRAM_ATTR Pulse(void *);
         static Action nextAction;        
         static bool pulsing;
-        static volatile int lastCpValue;
+        static volatile unsigned int lastCpValue;
+        static volatile int lastLowValue;
+        static volatile CpState lastState;
         static int highTime;
 };

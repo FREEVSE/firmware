@@ -4,7 +4,7 @@
 
 //Development switches
 #define DEBUG
-//#define NO_POST //Disables power on self test. Will default to 120v mode.
+#define NO_POST //Disables power on self test. Will default to 120v mode.
 //#define NO_SAFETY_CHECKS //Disables monitoring of protected earth and GFCI
 
 //Firmware version
@@ -52,6 +52,7 @@
 #define CP_PRESENT_MIN CP_PRESENT - CP_STATE_TOLERANCE
 #define CP_PRESENT_MAX CP_PRESENT + CP_STATE_TOLERANCE
 #define CP_IDLE_MIN CP_PRESENT_MAX
+#define CP_LOW_MAX CP_STATE_TOLERANCE
 
 //PWM configuration
 //The EVSE equipment communicates the amperage it can provide with PWM
