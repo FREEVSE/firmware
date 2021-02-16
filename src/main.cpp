@@ -5,6 +5,7 @@
 #include <CommandHandler.h>
 #include <Commands.h>
 #include <ChargerAtm.h>
+#include <rpc.h>
 
 #include <Configuration.h>
 
@@ -92,8 +93,8 @@ void setup() {
   ACDetector::Init();
 
   Serial.println(" - Initializing LCD...");
-  //LCD::Init();
-  //LCD::SetWifiState(false);
+  LCD::Init();
+  LCD::SetWifiState(false);
 
   //Init met sensor
   Serial.println(" - Initializing environmental sensor...");
@@ -109,6 +110,8 @@ void setup() {
   WiFiManager::Init();
   Bluetooth::Init();
 
+  RpcServer rpc;
+  rpc.Init();
 }
 
 void loop() {  

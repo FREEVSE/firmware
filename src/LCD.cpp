@@ -1,14 +1,20 @@
+#include <Common.h>
+#include <Configuration.h>
 #include <LCD.h>
 //#include <LiquidCrystal_I2C.h>
+
+#define LOG_TAG "LCD"
 
 #define LCD_CLEAR_STATUS\
     device.setCursor(0, 0);\
     device.print("                   ")
 
 LiquidCrystal_I2C LCD::device(PCF8574_ADDR_A21_A11_A01, 4, 5, 6, 16, 11, 12, 13, 14, POSITIVE);
+TaskHandle_t LCD::timerTask;
 
 const byte wifiOnIcon[8] = { 0x00, 0x00, 0x0E, 0x11, 0x04, 0x0A, 0x00, 0x04 };
 const byte wifiOffIcon[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04 };
+
 
 void LCD::Init(){
     while (device.begin(LCD_COLS, LCD_ROWS) != 1) //colums - 20, rows - 4
@@ -45,6 +51,34 @@ void LCD::PrintCapabilities(u_short amps, bool l1){
     else{ device.print("L2/240V"); }
 }
 
-void LCD::StartChargeTimer(float secs = 0){
+void LCD::StartTimer(){
+    xTaskCreatePinnedToCore(TimerTask, "TimerTask", 2048, NULL, 10, &timerTask, APP_CORE);
+}
 
+void LCD::StopTimer(){
+    if(timerTask == NULL) return;
+
+    vTaskDelete(timerTask);
+    timerTask = NULL;
+}
+
+void LCD::TimerTask(void * params){
+    unsigned long startTime = millis();
+
+    while(true){
+        ulong start = micros();
+        int secs = (millis() - startTime) * 0.001;
+        int mins = secs / 60;
+        int hours = mins / 60;
+        mins -= hours * 60;
+        secs -= mins * 60;
+
+        device.setCursor(0, 1);
+        device.printf("%02d:%02d:%02d", hours, mins, secs);
+
+        ulong stop = micros();
+        vTaskDelay((1000 - ((stop - start) * 1000)) / portTICK_PERIOD_MS);
+    }
+
+    vTaskDelete(NULL);
 }

@@ -1,3 +1,4 @@
+#include <Common.h>
 #include <WiFiManager.h>
 #include <WiFiClientSecure.h>
 #include <Configuration.h>
@@ -7,7 +8,13 @@
 #include <sstream>
 #include <atomic>
 
+#include <esp_wifi.h>
 #include "esp_https_ota.h"
+#include "mdns.h"
+
+#include <LCD.h>
+
+#define LOG_TAG "WiFi Manager"
 
 semver_t WiFiManager::currentVersion;
 EventGroupHandle_t WiFiManager::wifiEvtGrp;
@@ -48,22 +55,31 @@ const char *caCert = \
 "-----END CERTIFICATE-----\n";
 
 void WiFiManager::Init(){
+    wifi_config_t current_conf;
+    esp_wifi_get_config(WIFI_IF_STA, &current_conf);
+
+    LOG_I("Stored WiFi SSID: %s - PASS: %s", current_conf.sta.ssid, current_conf.sta.password);
+
     WiFi.onEvent(WiFiStationConnected, SYSTEM_EVENT_STA_GOT_IP);
     WiFi.onEvent(WiFiStationDisconnected, SYSTEM_EVENT_STA_DISCONNECTED);
     WiFi.begin();
 
     if(semver_parse(FREEVSE_VERSION, &currentVersion)){
-        WIFI_ERROR("%s Invalid version string %s, won't be able to check for updates.", __func__, FREEVSE_VERSION);
+        LOG_E("%s Invalid version string %s, won't be able to check for updates.", __func__, FREEVSE_VERSION);
     }
 }
 
 void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
 {
+    LCD::SetWifiState(true);
     xTaskCreate(UpdateMonitorTask, "updateMonitorTask", 5120, NULL, 1, &updateTask);
+
+    InitMdns();
 }
 
 void WiFiManager::WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)
 {
+    LCD::SetWifiState(false);
     if(updateTask != NULL){
         vTaskDelete(updateTask);
         updateTask = NULL;
@@ -71,14 +87,14 @@ void WiFiManager::WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t inf
 }
 
 void WiFiManager::UpdateMonitorTask(void* param){
-        WIFI_INFO("Update monitoring task started.");
+        LOG_I("Update monitoring task started.");
 
         while(1){
-            WIFI_INFO("Time to check for an update!");
+            LOG_I("Time to check for an update!");
             auto res = CheckUpdate();
 
             if(std::get<0>(res)){
-                WIFI_INFO("Update available! Won't check again.");
+                LOG_I("Update available! Won't check again.");
 
                 IsUpdateAvailable.store(true);
 
@@ -86,7 +102,7 @@ void WiFiManager::UpdateMonitorTask(void* param){
                 vTaskDelete(NULL);
             }
 
-            vTaskDelay(/*4.32e+7*/ 30000 / portTICK_PERIOD_MS);
+            vTaskDelay(UPDATE_INTERVAL_MS / portTICK_PERIOD_MS);
         }
 }
 
@@ -99,10 +115,10 @@ UpdateCheck WiFiManager::CheckUpdate(){
 
     if (client.connect(FREEVSE_SERVER, 443)){
 
-        WIFI_INFO("Connected to update server at %s", FREEVSE_SERVER);
+        LOG_I("Connected to update server at %s", FREEVSE_SERVER);
 
         //Send the HTTP request to get JSON update info
-        WIFI_INFO("GET /updates?hwv=%s&fwv=%s HTTP/1.0", FREEVSE_BOARD, FREEVSE_VERSION);
+        LOG_I("GET /updates?hwv=%s&fwv=%s HTTP/1.0", FREEVSE_BOARD, FREEVSE_VERSION);
         client.printf("GET /updates?hwv=%s&fwv=%s HTTP/1.0", FREEVSE_BOARD, FREEVSE_VERSION);
         client.println();
         client.println("Host: freevse.org");
@@ -115,7 +131,7 @@ UpdateCheck WiFiManager::CheckUpdate(){
             String line = client.readStringUntil('\n');
             if (line == "\r")
             {
-                WIFI_INFO("Headers received");
+                LOG_I("Headers received");
                 break;
             }
         }
@@ -123,14 +139,14 @@ UpdateCheck WiFiManager::CheckUpdate(){
         //Try to deserialize the JSON
         if (deserializeJson(doc, client))
         {
-            WIFI_ERROR("Failed to parse json reply.");
+            LOG_E("Failed to parse json reply.");
             return UpdateCheck(Error, NULL);
         }
 
         //Parse the version string so we can see if we want it
         if (semver_parse(doc["version"], &availableVersion))
         {
-            WIFI_ERROR("Invalid version string received in update check. Not updating...");
+            LOG_E("Invalid version string received in update check. Not updating...");
             return UpdateCheck(Error, NULL);
         }
 
@@ -139,19 +155,19 @@ UpdateCheck WiFiManager::CheckUpdate(){
         {
             auto res = UpdateCheck(Available, new char[24]);
             strcpy((char*)std::get<1>(res), doc["file"]);
-            WIFI_INFO("Update available: %s", std::get<1>(res));
+            LOG_I("Update available: %s", std::get<1>(res));
             return res;
         }
         else
         {
-            WIFI_INFO("Latest version already running.");
+            LOG_I("Latest version already running.");
             return UpdateCheck(Latest, NULL);
         }
         
     }
     else
     {
-        WIFI_ERROR("Unable to connect to update server");
+        LOG_E("Unable to connect to update server");
         return UpdateCheck(Error, NULL);
     }
 }
@@ -163,14 +179,14 @@ esp_err_t WiFiManager::DoUpdate(const char* bin){
     char* uri = (char*) malloc(len + 1);
     snprintf(uri, len+1, "https://%s/updates/%s", FREEVSE_SERVER, bin);
 
-    WIFI_INFO("Requesting binary from: %s", uri);
+    LOG_I("Requesting binary from: %s", uri);
 
     esp_http_client_config_t cfg = {
         .url = uri,
         .cert_pem = caCert
     };
 
-    WIFI_INFO("Starting firmware update: %s", uri);
+    LOG_I("Starting firmware update: %s", uri);
 
     btStop();
 
@@ -179,10 +195,26 @@ esp_err_t WiFiManager::DoUpdate(const char* bin){
     enableCore1WDT();
 
     if (ret == ESP_OK) {
-        WIFI_INFO("Firmware updated! Asking for restart...");
+        LOG_I("Firmware updated! Asking for restart...");
         IsUpdatePending = true;
     } else {
         return ESP_FAIL;
     }
+    return ESP_OK;
+}
+
+esp_err_t WiFiManager::InitMdns(){
+    if(auto err = mdns_init()){
+        LOG_E("MDNS Failed to initialize: %d", err);
+        return err;
+    }
+
+    mdns_hostname_set("FREEVSE");
+    mdns_instance_name_set("FREEVSE - Smart J1772 EVSE");
+
+    mdns_txt_item_t txtData[1] = {{"ver", FREEVSE_VERSION}};
+
+    mdns_service_add(NULL, "_freevserpc", "_tcp", 80, txtData, 1);
+
     return ESP_OK;
 }

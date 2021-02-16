@@ -13,9 +13,13 @@
 //Hardware version
 #define FREEVSE_BOARD "1.0.0"
 
+//Cores
+#define APP_CORE 1
+
 //Update settings
 #define FREEVSE_SERVER "freevse.org"
 #define FREEVSE_SERVER_SCHEME "https"
+#define UPDATE_INTERVAL_MS 4.32e+7
 #define UPDATE_RETY_COUNT 3
 
 //Pin assignments

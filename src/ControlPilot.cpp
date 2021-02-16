@@ -217,8 +217,6 @@ CpState ControlPilot::State(){
         state = CpState::ChargeWithVentilation;
     }
 
-    ESP_LOGI("CP", "CP level is %i, %s", highVal, ToString(state));
-
     return lastState = state;
 }
 

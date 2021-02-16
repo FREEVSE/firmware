@@ -166,14 +166,11 @@ void DoUpdate(void* params){
 }*/
 
 void Cmd_ReadSettings(CommandParameter &params){
-    Serial.println("**Charge Settings**");
-    Serial.print("Max amp output: ");
-    Serial.println(Configuration::GetMaxOutputAmps());
+    Serial.println("**Charge**");
+    Serial.printf("Max amp output: %d\n", Configuration::GetMaxOutputAmps());
 
-    Serial.println("**WiFi Settings**");
-    Serial.print("SSID: ");
-    Serial.println(Configuration::GetWiFiSSID());
-
-    Serial.print("Password: ");
-    Serial.println(Configuration::GetWiFiPass());
+    Serial.println("**WiFi**");
+    Serial.printf("SSID: %s\n", Configuration::GetWiFiSSID().c_str());
+    Serial.printf("Password: %s\n", Configuration::GetWiFiPass().c_str());
+    Serial.printf("Auto Update: %d\n", Configuration::GetAutoUpdate());
 }

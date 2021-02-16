@@ -1,4 +1,5 @@
 #include <Configuration.h>
+#include <WiFi.h>
 //#include <Preferences.h>
 
 Preferences Configuration::prefs = Preferences();
@@ -19,19 +20,23 @@ void Configuration::SetMaxOutputAmps(short val){
 
 //WiFi Info
 String Configuration::GetWiFiSSID(){
-    return prefs.getString("WIFI_SSID");
+    //TODO: Needs to load the autoconfigured credentials
+    return "NOT IMPLEMENTED";
 }
 
 void Configuration::SetWiFiSSID(const char * ssid){
-    prefs.putString("WIFI_SSID", ssid);
+    //TODO: Needs to save to the autoconfigured credentials
+    return;
 }
 
 String Configuration::GetWiFiPass(){
-    return prefs.getString("WIFI_PASS");
+    //TODO: Needs to load the autoconfigured credentials
+    return "NOT IMPLEMENTED";
 }
 
 void Configuration::SetWiFiPass(const char * pass){
-    prefs.putString("WIFI_PASS", pass);
+    //TODO: Needs to save to the autoconfigured credentials
+    return;
 }
 
 //Updates

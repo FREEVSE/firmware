@@ -81,11 +81,13 @@ void ChargerAtm::EnterVehicleDetected(){
 
 void ChargerAtm::EnterCharging(){
     LCD::PrintStatus("Charging");
+    LCD::StartTimer();
     Contactor::Close();
     delay(250); //Give the contactor some time to close
 }
 
 void ChargerAtm::ExitCharging(){
+    LCD::StopTimer();
     Contactor::Open();
 }
 
@@ -117,8 +119,6 @@ void ChargerAtm::EnterError(){
 }
 
 int ChargerAtm::event(int id){
-    //CpState cpState = ControlPilot::State();
-
     switch(id){
         case EVT_VEHICLE_DISCONNECTED:
             return cpState == CpState::Idle;
