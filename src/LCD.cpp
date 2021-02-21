@@ -9,14 +9,16 @@
     device.setCursor(0, 0);\
     device.print("                   ")
 
+#ifndef NO_LCD
 LiquidCrystal_I2C LCD::device(PCF8574_ADDR_A21_A11_A01, 4, 5, 6, 16, 11, 12, 13, 14, POSITIVE);
 TaskHandle_t LCD::timerTask;
 
 const byte wifiOnIcon[8] = { 0x00, 0x00, 0x0E, 0x11, 0x04, 0x0A, 0x00, 0x04 };
 const byte wifiOffIcon[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04 };
-
+#endif
 
 void LCD::Init(){
+    #ifndef NO_LCD
     while (device.begin(LCD_COLS, LCD_ROWS) != 1) //colums - 20, rows - 4
     {
         Serial.println(F("PCF8574 is not connected or lcd pins declaration is wrong. Only pins numbers: 4,5,6,16,11,12,13,14 are legal."));
@@ -25,22 +27,28 @@ void LCD::Init(){
 
     device.createChar(LCD_ICON_WIFI_ON, wifiOnIcon);
     device.createChar(LCD_ICON_WIFI_OFF, wifiOffIcon);
+    #endif
 }
 
 void LCD::PrintStatus(const char *status){
+    #ifndef NO_LCD
     LCD_CLEAR_STATUS;
     device.setCursor(0, 0);
     device.print(status);
+    #endif
 }
 
 void LCD::SetWifiState(bool connected){
+    #ifndef NO_LCD
     device.setCursor(20, 0);
 
     if(connected) { device.write(LCD_ICON_WIFI_ON); }
     else { device.write(LCD_ICON_WIFI_OFF); }
+    #endif
 }
 
 void LCD::PrintCapabilities(u_short amps, bool l1){
+    #ifndef NO_LCD
     device.setCursor(0, 3);
     device.print("Max:");
     device.print(amps);
@@ -49,19 +57,25 @@ void LCD::PrintCapabilities(u_short amps, bool l1){
     device.setCursor(13 , 3);
     if(l1){ device.print("L1/120V"); }
     else{ device.print("L2/240V"); }
+    #endif
 }
 
 void LCD::StartTimer(){
+    #ifndef NO_LCD
     xTaskCreatePinnedToCore(TimerTask, "TimerTask", 2048, NULL, 10, &timerTask, APP_CORE);
+    #endif
 }
 
 void LCD::StopTimer(){
+    #ifndef NO_LCD
     if(timerTask == NULL) return;
 
     vTaskDelete(timerTask);
     timerTask = NULL;
+    #endif
 }
 
+#ifndef NO_LCD
 void LCD::TimerTask(void * params){
     unsigned long startTime = millis();
 
@@ -82,3 +96,4 @@ void LCD::TimerTask(void * params){
 
     vTaskDelete(NULL);
 }
+#endif

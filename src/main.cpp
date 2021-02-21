@@ -92,9 +92,11 @@ void setup() {
   Serial.println(" - Initializeing AC detector...");
   ACDetector::Init();
 
+  #ifndef NO_LCD
   Serial.println(" - Initializing LCD...");
   LCD::Init();
   LCD::SetWifiState(false);
+  #endif
 
   //Init met sensor
   Serial.println(" - Initializing environmental sensor...");
@@ -109,9 +111,6 @@ void setup() {
 
   WiFiManager::Init();
   Bluetooth::Init();
-
-  RpcServer rpc;
-  rpc.Init();
 }
 
 void loop() {  

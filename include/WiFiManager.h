@@ -1,6 +1,7 @@
 #pragma once
 #include <WiFi.h>
 #include <semver.h>
+#include <rpc.h>
 
 //#define WIFI_TAG "WiFi Manager"
 #define WIFI_INFO(fmt, ...)   ESP_LOGI(WIFI_TAG, fmt, ##__VA_ARGS__) 

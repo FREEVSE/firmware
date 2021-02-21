@@ -5,7 +5,8 @@
 //Development switches
 #define DEBUG
 #define NO_POST //Disables power on self test. Will default to 120v mode.
-//#define NO_SAFETY_CHECKS //Disables monitoring of protected earth and GFCI
+#define NO_LCD //Won't init LCD
+//#define NO_SAFETY_CHECKS //Disables monitoring of protected earth and ambient temp
 
 //Firmware version
 #define FREEVSE_VERSION "1.0.0"
