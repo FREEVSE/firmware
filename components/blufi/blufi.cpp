@@ -73,7 +73,7 @@ esp_blufi_callbacks_t Blufi::callbacks = {
 
 void Blufi::init(){
     esp_err_t ret;
-
+    
     //Check if the BT stack is init and enabled, if not we do it here
     if(esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED){
         ret = esp_bluedroid_init();

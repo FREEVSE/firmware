@@ -31,6 +31,7 @@ volatile CpState ControlPilot::lastState = CpState::Idle;
  * @return	void
  */
 void ControlPilot::Init(){
+    #ifdef EN_CP
     pinMode(CP_PWM_PIN, OUTPUT);
 
     //adcAttachPin(CP_READ_PIN);
@@ -52,6 +53,7 @@ void ControlPilot::Init(){
     ESP_ERROR_CHECK(timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0)); //Timer will reset to this value on alarm
     ESP_ERROR_CHECK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
     ESP_ERROR_CHECK(timer_isr_register(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0, Pulse, NULL, ESP_INTR_FLAG_IRAM ,NULL));
+    #endif
 }
 
 
@@ -120,6 +122,7 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
  * @return	ESP_OK is pulsing started, ESP_FAIL if not (most likely becasue cp read semaphore couldn't be taken)
  */
 esp_err_t ControlPilot::BeginPulse(){
+    #ifdef EN_CP
     if(pulsing)
         return ESP_OK;
 
@@ -129,6 +132,7 @@ esp_err_t ControlPilot::BeginPulse(){
     ESP_ERROR_CHECK(timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000));
     ESP_ERROR_CHECK(timer_start(timer_group_t::TIMER_GROUP_0, timer_idx_t::TIMER_0));
 
+    #endif
     return ESP_OK;
 }
 
@@ -144,6 +148,7 @@ esp_err_t ControlPilot::BeginPulse(){
  * @return	void
  */
 void ControlPilot::EndPulse(){
+    #ifdef EN_CP
     if(!pulsing)
         return;
 
@@ -156,6 +161,7 @@ void ControlPilot::EndPulse(){
     lastLowValue = -1;
 
     pulsing = false;
+    #endif
 }
 
 
@@ -173,6 +179,7 @@ void ControlPilot::EndPulse(){
  * @return	Computed state of Control Pilot Line
  */
 CpState ControlPilot::State(){
+    #ifdef EN_CP
     int highVal = 0;
 
     if (pulsing)
@@ -218,6 +225,9 @@ CpState ControlPilot::State(){
     }
 
     return lastState = state;
+    #else
+    return CpState::Idle;
+    #endif
 }
 
 /**

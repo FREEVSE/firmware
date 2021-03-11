@@ -2,7 +2,9 @@
 #include <WiFiManager.h>
 #include <WiFiClientSecure.h>
 #include <Configuration.h>
+#include <ControlPilot.h>
 #include <ArduinoJson.h>
+#include <RpcServer.h>
 //#include <semver.h>
 #include <string>
 #include <sstream>
@@ -67,6 +69,7 @@ void WiFiManager::Init(){
     if(semver_parse(FREEVSE_VERSION, &currentVersion)){
         LOG_E("%s Invalid version string %s, won't be able to check for updates.", __func__, FREEVSE_VERSION);
     }
+
 }
 
 void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
@@ -75,6 +78,28 @@ void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
     xTaskCreate(UpdateMonitorTask, "updateMonitorTask", 5120, NULL, 1, &updateTask);
 
     InitMdns();
+
+    RpcServer server;
+    server.Start();
+    server.RegisterGetHandler<const char*>("HWVersion", [](){ return FREEVSE_BOARD; });
+    server.RegisterGetHandler<const char*>("FWVersion", [](){ return FREEVSE_VERSION; });
+    server.RegisterGetHandler<short>("MaxOutput", Configuration::GetMaxOutputAmps);
+    server.RegisterGetHandler<bool>("AutoUpdate", Configuration::GetAutoUpdate);
+    
+    server.RegisterHandler("DeviceInfo", HTTP_GET, [](rpc_request* req, char* response, size_t len){
+        const int size = JSON_OBJECT_SIZE(5);
+        StaticJsonDocument<size> doc;
+
+        doc["hwv"] = FREEVSE_BOARD;
+        doc["fwv"] = FREEVSE_VERSION;
+        doc["maxOutput"] = Configuration::GetMaxOutputAmps();
+        doc["autoUpdate"] = Configuration::GetAutoUpdate();
+        doc["state"] = ControlPilot::ToString(ControlPilot::State());
+
+        serializeJson(doc, response, len);
+
+        return ESP_OK;
+    });
 }
 
 void WiFiManager::WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)

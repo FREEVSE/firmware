@@ -5,7 +5,6 @@
 #include <CommandHandler.h>
 #include <Commands.h>
 #include <ChargerAtm.h>
-#include <rpc.h>
 
 #include <Configuration.h>
 

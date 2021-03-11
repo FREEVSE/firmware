@@ -4,6 +4,7 @@
 
 //Development switches
 #define DEBUG
+#define OCD //Disables any peripherals using pins needed for OCD
 #define NO_POST //Disables power on self test. Will default to 120v mode.
 #define NO_LCD //Won't init LCD
 //#define NO_SAFETY_CHECKS //Disables monitoring of protected earth and ambient temp
@@ -22,6 +23,13 @@
 #define FREEVSE_SERVER_SCHEME "https"
 #define UPDATE_INTERVAL_MS 4.32e+7
 #define UPDATE_RETY_COUNT 3
+
+//Modules
+//Comment the line of the module you want to disable
+#define EN_AC_DETECTOR
+#define EN_CP
+#define EN_CONTACTOR
+#define EN_LCD
 
 //Pin assignments
 #define SDA_PIN 25
@@ -72,6 +80,8 @@
 //GFCI configuration
 #define GFCI_PWM_CHAN 2
 #define GFCI_TST_FREQ 2000
+
+#include <ConfigurationBackend.h>
 
 
 class Configuration{

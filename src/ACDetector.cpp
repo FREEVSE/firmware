@@ -11,7 +11,7 @@ volatile unsigned long ACDetector::lastL1Detection = 0;
 volatile unsigned long ACDetector::lastL2Detection = 0;
 
 void ACDetector::Init(){
-    #ifndef NO_SAFETY_CHECKS
+    #ifdef EN_AC_DETECT
     gpio_config_t conf{
         .pin_bit_mask = PIN_MASK,
         .mode = GPIO_MODE_INPUT,
@@ -28,18 +28,18 @@ void ACDetector::Init(){
 }
 
 bool ACDetector::IsL1Present(){
-    #ifdef NO_SAFETY_CHECKS
-    return true;
-    #else
+    #ifdef EN_AC_DETECT
     return lastL1Detection > micros() - 9000 || digitalRead(SENS_L1_PIN) == LOW;
+    #else
+    return true;
     #endif
 }
 
 bool ACDetector::IsL2Present(){
-    #ifdef NO_SAFETY_CHECKS
-    return false;
-    #else
+    #ifdef EN_AC_DETECT
     return lastL2Detection > micros() - 9000 || digitalRead(SENS_L2_PIN) == LOW;
+    #else
+    return false;
     #endif
 }
 
