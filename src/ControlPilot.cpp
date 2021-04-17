@@ -34,6 +34,9 @@ void ControlPilot::Init(){
     #ifdef EN_CP
     pinMode(CP_PWM_PIN, OUTPUT);
 
+    //Set analog read res to a lower value for slightly more linear curve.
+    analogReadResolution(9);
+
     //adcAttachPin(CP_READ_PIN);
     adc1_config_width(ADC_WIDTH_9Bit);
     adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_DB_0);
@@ -75,7 +78,7 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
     int nextActionDelay = 0;
 
     switch(nextAction){
-        //Sample the low value and pulse the CP line HIGH
+        //Pulse the CP line HIGH
         case Action::PulseHigh:
             digitalWrite(CP_PWM_PIN, LOW);
             nextActionDelay = 30;

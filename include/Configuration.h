@@ -2,12 +2,21 @@
 
 #include <Preferences.h>
 
-//Development switches
-#define DEBUG
-#define OCD //Disables any peripherals using pins needed for OCD
-#define NO_POST //Disables power on self test. Will default to 120v mode.
-#define NO_LCD //Won't init LCD
+/**
+ * Development switches
+ * These are "shortcuts" for setting the firmware up for common dev scenarios
+ */
+
+//#define DEBUG
+//#define OCD //Disables any peripherals using pins needed for OCD
+//#define NO_POST //Disables power on self test. Will default to 120v mode.
+//#define NO_LCD //Won't init LCD
 //#define NO_SAFETY_CHECKS //Disables monitoring of protected earth and ambient temp
+
+/**
+ * Versions
+ * These are the various versions associated with this firmware build
+ */
 
 //Firmware version
 #define FREEVSE_VERSION "1.0.0"
@@ -15,10 +24,13 @@
 //Hardware version
 #define FREEVSE_BOARD "1.0.0"
 
-//Cores
-#define APP_CORE 1
-
-//Update settings
+/**
+ * Update settings
+ * These settings control automatic and manual updates
+ * To disable updates entiery, comment EN_UPDATES. This will prevent both
+ * automatic AND manual updates.
+ */
+#define EN_UPDATES
 #define FREEVSE_SERVER "freevse.org"
 #define FREEVSE_SERVER_SCHEME "https"
 #define UPDATE_INTERVAL_MS 4.32e+7
@@ -26,12 +38,22 @@
 
 //Modules
 //Comment the line of the module you want to disable
+/**
+ * Hardware Modules
+ * Commenting any of these lines will disable the associated hardware module.
+ * Some functions will return "dummy" values in order for the rest of the firmware
+ * to continue functioning. 
+ */
 #define EN_AC_DETECTOR
 #define EN_CP
 #define EN_CONTACTOR
 #define EN_LCD
+#define EN_TEMP_SENSOR
+#define EN_GFCI
 
-//Pin assignments
+/**
+ * Pin assignments
+ */
 #define SDA_PIN 25
 #define SCL_PIN 26
 #define DHT_PIN 32
@@ -44,11 +66,16 @@
 #define SENS_L1_PIN 22
 #define SENS_L2_PIN 23
 
-//Timers
-#define CP_TIMER 0
-#define GFCI_TIMER 1
+/**
+ * CP State Levels
+ * These define the ADC values used for determining the state of the CP.
+ * These will probably work for all ESPs regardless of ADC calibration since
+ * the ranges are relatively broad. They can be tweaked if you run an ADC calibration.
+ * 
+ * Since analog read resolution is set to 9, there are 512 possible values.
+ * The CP varies between -12 (0) and +12v (511).
+ */
 
-//CP state levels
 //These are the expected ADC readings for each of the possible CP states
 #define CP_WITH_VENT 294
 #define CP_CHARGING 358
@@ -67,15 +94,30 @@
 #define CP_IDLE_MIN CP_PRESENT_MAX
 #define CP_LOW_MAX CP_STATE_TOLERANCE
 
-//PWM configuration
-//The EVSE equipment communicates the amperage it can provide with PWM
-//on a 1kHz carrier using the following equation: Imax = 0.6A * (D / 10us)
-//where D is the duty cycle in μs. So for each 10μs of "on time", add 0.6 amps.
-#define CFG_MAX_AMP_DEFAULT 12
+/**
+ * PWM configuration
+ * The EVSE equipment communicates the amperage it can provide with PWM
+ * on a 1kHz carrier using the following equation: Imax = 0.6A * (D / 10us)
+ * where D is the duty cycle in μs. So for each 10μs of "on time", add 0.6 amps.
+ */
 
-#define CP_PWM_FREQ 1000.0        //PWM freq as per SAE J1772. (needs a decimal point for float arithmetic)
+#define CFG_MAX_AMP_DEFAULT 12  //12A is generally safe for any 15A outlet. Some chargers use 8A.
+
+#define CP_PWM_FREQ 1000.0      //PWM freq as per SAE J1772. (needs a decimal point for float arithmetic)
 #define CP_PWM_AMP_STEP 0.6     //Amps per step of "high" time as per SAE J1772
-#define CP_PWM_STEP 0.00001      //Duration of one "step" as per SAE J1772
+#define CP_PWM_STEP 0.00001     //Duration of one "step" as per SAE J1772
+
+/**
+ * Misc settings
+ * You probably shouldn't change any of these unless you know
+ * what you are doing.
+ */
+//Cores
+#define APP_CORE 1
+
+//Timers
+#define CP_TIMER 0
+#define GFCI_TIMER 1
 
 //GFCI configuration
 #define GFCI_PWM_CHAN 2
