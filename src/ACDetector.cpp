@@ -5,8 +5,6 @@
 
 #define PIN_MASK ((1ULL<<SENS_L1_PIN) | (1ULL<<SENS_L2_PIN))
 
-bool ACDetector::L1Detected = false;
-bool ACDetector::L2Detected = false;
 volatile unsigned long ACDetector::lastL1Detection = 0;
 volatile unsigned long ACDetector::lastL2Detection = 0;
 

@@ -25,6 +25,8 @@ void Bluetooth::Init(){
 
   BLEDevice::init("FREEVSE");
 
-  //if(!WiFi.isConnected())
-  Blufi::init();
+  if(!WiFi.isConnected()){
+    Blufi::init();
+  }
+  
 }

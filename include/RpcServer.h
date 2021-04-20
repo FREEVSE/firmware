@@ -1,10 +1,22 @@
 #include "esp_http_server.h"
 #include <ArduinoJson.h>
 
+/**
+ * @brief Wraps an httpd_req_t and provides convenience methods to get qery parameters
+ */
 struct rpc_request{
     public:
         rpc_request(httpd_req_t *httpdReq);
 
+        /**
+         * @brief Tries to parse a query parameter
+         * 
+         * @tparam T The type to try parsing
+         * @param key The string key of the parameter
+         * @param out The location to store the value if parsed
+         * @return true If parsing succeeded
+         * @return false If parsing failed
+         */
         template<typename T>
         bool TryGetParam(const char* key, T& out);
 
@@ -83,6 +95,27 @@ class RpcServer{
             };
 
             httpd_register_uri_handler(server, &cfg);
+
+            return ESP_OK;
+        }
+
+        /**
+         * @brief Registers GET and SET handlers
+         * 
+         * @tparam T The type of the value being SET
+         * @param uri RPC endpoint I.E. Name of the value to SET
+         * @param getter Function that returns the value to GET
+         * @param setter Function that SETs the value
+         * @return esp_err_t ESP_OK on successful registration
+         */
+        template <typename T>
+        esp_err_t RegisterPropertyHandler(const char *uri, T (*getter)(), void (*setter)(T val)){
+            if(
+                !RegisterGetHandler(uri, getter) ||
+                !RegisterSetHandler(uri, setter)
+            ){
+                return ESP_FAIL;
+            }
 
             return ESP_OK;
         }

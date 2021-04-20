@@ -15,7 +15,7 @@ Action ControlPilot::nextAction;
 bool ControlPilot::pulsing = false;
 int ControlPilot::highTime = 0;
 
-volatile unsigned int ControlPilot::lastCpValue = 0;
+volatile unsigned int ControlPilot::lastHighValue = 0;
 volatile int ControlPilot::lastLowValue = -1;
 volatile CpState ControlPilot::lastState = CpState::Idle;
 
@@ -87,7 +87,7 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
         
         //Sample the CP line
         case Action::SampleHigh:
-            lastCpValue = adc1_get_raw(ADC1_CHANNEL_5); //analogRead(CP_READ_PIN);
+            lastHighValue = adc1_get_raw(ADC1_CHANNEL_5); //analogRead(CP_READ_PIN);
             nextActionDelay = highTime - 30;
             nextAction = Action::PulseLow;
             break;
@@ -122,7 +122,7 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
  * @since	v0.0.1
  * @version	v1.0.0	Tuesday, November 17th, 2020.
  * @global
- * @return	ESP_OK is pulsing started, ESP_FAIL if not (most likely becasue cp read semaphore couldn't be taken)
+ * @return	ESP_OK is pulsing started, ESP_FAIL if not
  */
 esp_err_t ControlPilot::BeginPulse(){
     #ifdef EN_CP
@@ -187,7 +187,7 @@ CpState ControlPilot::State(){
 
     if (pulsing)
     {
-        //If we haven't had time to read the first pulse, return wait
+        //If we haven't had time to read the first pulse, return the last state (should be idle)
         if(lastLowValue < 0){ 
             ESP_LOGI(TAG, "Still waiting for first pulse");
             return lastState; 
@@ -201,7 +201,7 @@ CpState ControlPilot::State(){
             return lastState = CpState::Invalid; 
             }
 
-        highVal = lastCpValue;
+        highVal = lastHighValue;
     }
     else
     {
