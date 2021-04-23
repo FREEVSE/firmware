@@ -100,6 +100,21 @@ void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
 
         return ESP_OK;
     });
+
+    server.RegisterHandler("BleDevAddr", HTTP_POST, [](rpc_request* req, char* response, size_t len){
+        char dev;
+        char *addr;
+        
+        if(!req->TryGetParam("device", dev) || !req->TryGetParam("address", addr)){
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        if(!Configuration::SetBleDeviceAddr(dev, BLEAddress(addr))){
+            return ESP_FAIL;
+        }
+
+        return ESP_OK;
+    });
 }
 
 void WiFiManager::WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)

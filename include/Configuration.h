@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Preferences.h>
+#include <BLEUtils.h>
 
 /**
  * Development switches
@@ -125,6 +126,18 @@
 
 #include <ConfigurationBackend.h>
 
+#define BLE_ADDR_LEN 6
+#define MAX_BLE_DEVICES 8
+#define BLE_DEV_1 1
+#define BLE_DEV_2 2
+#define BLE_DEV_3 3
+#define BLE_DEV_4 4
+#define BLE_DEV_5 5
+#define BLE_DEV_6 6
+#define BLE_DEV_7 7
+#define BLE_DEV_8 8
+
+
 
 class Configuration{
     public:
@@ -148,9 +161,16 @@ class Configuration{
         static short GetFailedUpdateCount();
         static void SetFailedUpdateCount(short count = 1);
 
+        //BLE devices
+        static BLEAddress GetBleDeviceAddr(ushort ev);
+        static bool SetBleDeviceAddr(ushort dev, BLEAddress addr);
+        static bool ClearBleDeviceAddr(ushort dev);
+        static void GetBleDeviceAddrs(BLEAddress* addrs);
+
         static void Save();
 
         static Preferences prefs;
+        static Preferences bleDev;
 
     private:
         

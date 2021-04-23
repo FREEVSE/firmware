@@ -3,10 +3,6 @@
 #include <semver.h>
 #include <ArduinoJson.h>
 
-//#define WIFI_TAG "WiFi Manager"
-#define WIFI_INFO(fmt, ...)   ESP_LOGI(WIFI_TAG, fmt, ##__VA_ARGS__) 
-#define WIFI_ERROR(fmt, ...)  ESP_LOGE(WIFI_TAG, fmt, ##__VA_ARGS__) 
-
 enum UpdateCheckResult{
     Error,
     Latest,
