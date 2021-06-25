@@ -83,7 +83,7 @@ void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
     server.Start();
     server.RegisterGetHandler<const char*>("HWVersion", [](){ return FREEVSE_BOARD; });
     server.RegisterGetHandler<const char*>("FWVersion", [](){ return FREEVSE_VERSION; });
-    server.RegisterGetHandler<short>("MaxOutput", Configuration::GetMaxOutputAmps);
+    ESP_ERROR_CHECK(server.RegisterPropertyHandler<short>("MaxOutput", Configuration::GetMaxOutputAmps, Configuration::SetMaxOutputAmps));
     server.RegisterGetHandler<bool>("AutoUpdate", Configuration::GetAutoUpdate);
     
     server.RegisterHandler("DeviceInfo", HTTP_GET, [](rpc_request* req, char* response, size_t len){
@@ -101,19 +101,14 @@ void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
         return ESP_OK;
     });
 
-    server.RegisterHandler("BleDevAddr", HTTP_POST, [](rpc_request* req, char* response, size_t len){
-        char dev;
-        char *addr;
-        
-        if(!req->TryGetParam("device", dev) || !req->TryGetParam("address", addr)){
+    server.RegisterHandler("GetUpdate", HTTP_POST, [](rpc_request* req, char* response, size_t len){
+        char* bin = (char *) malloc(sizeof(char) * 32);
+
+        if(!req->TryGetParam("binary", bin, 32)){
             return ESP_ERR_INVALID_ARG;
         }
 
-        if(!Configuration::SetBleDeviceAddr(dev, BLEAddress(addr))){
-            return ESP_FAIL;
-        }
-
-        return ESP_OK;
+        return DoUpdate(bin);
     });
 }
 
@@ -219,8 +214,6 @@ esp_err_t WiFiManager::DoUpdate(const char* bin){
     char* uri = (char*) malloc(len + 1);
     snprintf(uri, len+1, "https://%s/updates/%s", FREEVSE_SERVER, bin);
 
-    LOG_I("Requesting binary from: %s", uri);
-
     esp_http_client_config_t cfg = {
         .url = uri,
         .cert_pem = caCert
@@ -234,10 +227,13 @@ esp_err_t WiFiManager::DoUpdate(const char* bin){
     esp_err_t ret = esp_https_ota(&cfg);
     enableCore1WDT();
 
+    free(uri);
+
     if (ret == ESP_OK) {
         LOG_I("Firmware updated! Asking for restart...");
         IsUpdatePending = true;
     } else {
+        LOG_E("Firmware update failed");
         return ESP_FAIL;
     }
     return ESP_OK;

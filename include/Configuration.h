@@ -105,6 +105,7 @@
 #define CFG_MAX_AMP_DEFAULT 12  //12A is generally safe for any 15A outlet. Some chargers use 8A.
 
 #define CP_PWM_FREQ 1000.0      //PWM freq as per SAE J1772. (needs a decimal point for float arithmetic)
+#define CP_PWM_PERIOD_US 1 / CP_PWM_FREQ * 1000000
 #define CP_PWM_AMP_STEP 0.6     //Amps per step of "high" time as per SAE J1772
 #define CP_PWM_STEP 0.00001     //Duration of one "step" as per SAE J1772
 

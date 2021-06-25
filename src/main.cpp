@@ -57,12 +57,6 @@ void setup() {
   ACDetector::Init();
   #endif
 
-  #ifdef EN_LCD
-  LOG_I(" - Initializing LCD...");
-  LCD::Init();
-  LCD::SetWifiState(false);
-  #endif
-
   #ifdef EN_TEMP_SENSOR
   LOG_I(" - Initializing environmental sensor...");
   if(!TempSensor::Init()) {
@@ -75,6 +69,12 @@ void setup() {
 
   WiFiManager::Init();
   Bluetooth::Init();
+
+  #ifdef EN_LCD
+  LOG_I(" - Initializing LCD...");
+  LCD::Init();
+  LCD::SetWifiState(false);
+  #endif
 }
 
 void loop() {  

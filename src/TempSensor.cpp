@@ -9,6 +9,7 @@ bool TempSensor::Init(){
 
     return dht.read();
     #endif
+    return true;
 }
 
 float TempSensor::ReadTemp(){

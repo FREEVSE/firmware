@@ -71,6 +71,7 @@ void ChargerAtm::EnterPOST(){
 
 void ChargerAtm::EnterIdle(){
     LCD::PrintStatus("Idle");
+    LCD::ClearTimer();
     ControlPilot::EndPulse();
 }
 
@@ -101,7 +102,7 @@ void ChargerAtm::EnterUpdating(){
             Configuration::SetFailedUpdateCount();
             LCD::PrintStatus("Update failed!");
         }
-        else { LCD::PrintStatus("Updated! Restarting..."); }
+        else { LCD::PrintStatus("OK - restart in 10s"); }
 
         delay(10000);
         esp_restart();

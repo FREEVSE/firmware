@@ -60,6 +60,13 @@ class ControlPilot{
         static CpState State();
 
         /**
+         * @brief Gets the raw high and low ADC values of the last CP line read
+         * 
+         * @return std::tuple<int, int> 1. Last High value, 2. Last low value
+         */
+        static std::tuple<int, int> Raw();
+
+        /**
          * @brief Returns the string representation of the CP state
          * 
          * @param value A CP state to stringify

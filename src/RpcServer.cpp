@@ -148,7 +148,7 @@ bool rpc_request::TryGetParam(const char *key, short& out){
     auto res = httpd_query_key_value(queryStrBuf, key, buf, 8);
 
     if(res != ESP_OK){
-        return NULL;
+        return false;
     }
 
     return TryParseShort(buf, out);
@@ -167,7 +167,7 @@ bool rpc_request::TryGetParam(const char *key, ushort& out){
     auto res = httpd_query_key_value(queryStrBuf, key, buf, 8);
 
     if(res != ESP_OK){
-        return NULL;
+        return false;
     }
 
     return TryParseUshort(buf, out);
@@ -186,7 +186,7 @@ bool rpc_request::TryGetParam(const char *key, int& out){
     auto res = httpd_query_key_value(queryStrBuf, key, buf, 8);
 
     if(res != ESP_OK){
-        return NULL;
+        return false;
     }
 
     return TryParseInt(buf, out);
@@ -205,10 +205,21 @@ bool rpc_request::TryGetParam(const char *key, uint& out){
     auto res = httpd_query_key_value(queryStrBuf, key, buf, 8);
 
     if(res != ESP_OK){
-        return NULL;
+        return false;
     }
 
     return TryParseUint(buf, out);
+}
+
+/**
+ * @brief Attemps to get the raw data from query string parameter key
+ * 
+ * @tparam
+ * @param key The key of the parameter
+ * @return uint 
+ */
+bool rpc_request::TryGetParam(const char *key, void* out, size_t len){
+    return !httpd_query_key_value(queryStrBuf, key, (char *) out, len);
 }
 
 /**
@@ -304,8 +315,8 @@ esp_err_t RpcServer::Handle(httpd_req_t *req)
             httpd_resp_set_status(req, HTTPD_400);
             break;
         case ESP_FAIL:
-            httpd_resp_set_status(req, HTTPD_500);
         default:
+            httpd_resp_set_status(req, HTTPD_500);
             break;
         }
     }
@@ -318,14 +329,17 @@ esp_err_t RpcServer::HandleSet<short>(httpd_req_t *req){
     auto setter = (rpc_set_handler_t<short>)req->user_ctx;
     char buf[17];
     
-    httpd_req_recv(req, buf, 16);
-    buf[16] = '\0'; //httpd_req_rcv doesn't write '\0'
+    int len = httpd_req_recv(req, buf, 16);
+    buf[len] = '\0'; //httpd_req_rcv doesn't write '\0'
 
     short val;
 
-    if (!TryParseShort(buf, val) || setter(val))
+    if (!TryParseShort(buf, val) /*|| setter(val)*/)
     {
         httpd_resp_set_status(req, HTTPD_400);
+    }
+    else{
+        setter(val);
     }
 
     return httpd_resp_send(req, NULL, 0);

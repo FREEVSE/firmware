@@ -42,6 +42,8 @@ class LCD{
          */
         static void PrintCapabilities(u_short amps, bool l1);
 
+        static void PrintDebugInfo();
+
         /**
          * @brief Starts the timer on the LCD
          */
@@ -51,6 +53,8 @@ class LCD{
          * @brief Stops the timer on the LCD
          */
         static void StopTimer();
+
+        static void ClearTimer();
     private:
         #ifndef NO_LCD
         static TaskHandle_t timerTask;

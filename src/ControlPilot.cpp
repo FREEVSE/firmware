@@ -9,6 +9,9 @@
 
 #define TAG "CP"
 
+#define DELAY_PULSEHIGH_SAMPLEHIGH 30
+#define DELAY_PULSELOW_SAMPLELOW 30
+
 //TODO Fix all the hardcoded timer groups and numbers
 
 Action ControlPilot::nextAction;
@@ -76,39 +79,43 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
     TIMERG0.int_clr_timers.t0 = 1;
 
     int nextActionDelay = 0;
+    ulong startMicros = micros();
+    ulong duration;
 
     switch(nextAction){
         //Pulse the CP line HIGH
         case Action::PulseHigh:
             digitalWrite(CP_PWM_PIN, LOW);
-            nextActionDelay = 30;
+            nextActionDelay = DELAY_PULSEHIGH_SAMPLEHIGH;
             nextAction = Action::SampleHigh;
             break;
         
         //Sample the CP line
         case Action::SampleHigh:
             lastHighValue = adc1_get_raw(ADC1_CHANNEL_5); //analogRead(CP_READ_PIN);
-            nextActionDelay = highTime - 30;
+            nextActionDelay = highTime - DELAY_PULSEHIGH_SAMPLEHIGH;
             nextAction = Action::PulseLow;
             break;
 
         //CP line back to LOW
         case Action::PulseLow:
             digitalWrite(CP_PWM_PIN, HIGH);
-            nextActionDelay = 30;
+            nextActionDelay = DELAY_PULSELOW_SAMPLELOW;
             nextAction = Action::SampleLow;
             break;
 
         case Action::SampleLow:
             lastLowValue = adc1_get_raw(ADC1_CHANNEL_5);
-            nextActionDelay = CP_PWM_FREQ - highTime - 30;
+            nextActionDelay = CP_PWM_PERIOD_US - highTime - DELAY_PULSELOW_SAMPLELOW;
             nextAction = Action::PulseHigh;
             break;
 
         //TODO: Sample CP line when low
     }
 
-    TIMERG0.hw_timer[0].alarm_low = nextActionDelay;    //Set next alarm. Since it's always less than 1000, we can set only the first 32 bits.
+    duration = micros() - startMicros;
+
+    TIMERG0.hw_timer[0].alarm_low = nextActionDelay - duration;    //Set next alarm. Since it's always less than 1000, we can set only the first 32 bits.
     TIMERG0.hw_timer[0].alarm_high = 0x0;               //... Just to be sure
     TIMERG0.hw_timer[0].config.alarm_en = 1;            //We need to re-enable the alarm
 }
@@ -231,6 +238,10 @@ CpState ControlPilot::State(){
     #else
     return CpState::Idle;
     #endif
+}
+
+std::tuple<int, int> ControlPilot::Raw(){
+    return std::make_tuple(lastHighValue, lastLowValue);
 }
 
 /**

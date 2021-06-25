@@ -20,6 +20,8 @@ struct rpc_request{
         template<typename T>
         bool TryGetParam(const char* key, T& out);
 
+        bool TryGetParam(const char* key, void* out, size_t len);
+
         ~rpc_request();
     private:
         httpd_req_t *httpdReq;
@@ -66,9 +68,7 @@ class RpcServer{
                 .user_ctx = (void *)getter
             };
 
-            httpd_register_uri_handler(server, &cfg);
-
-            return ESP_OK;
+            return httpd_register_uri_handler(server, &cfg);
         }
 
         /**
@@ -94,9 +94,7 @@ class RpcServer{
                 .user_ctx = (void *)setter
             };
 
-            httpd_register_uri_handler(server, &cfg);
-
-            return ESP_OK;
+            return httpd_register_uri_handler(server, &cfg);
         }
 
         /**
@@ -111,8 +109,8 @@ class RpcServer{
         template <typename T>
         esp_err_t RegisterPropertyHandler(const char *uri, T (*getter)(), void (*setter)(T val)){
             if(
-                !RegisterGetHandler(uri, getter) ||
-                !RegisterSetHandler(uri, setter)
+                RegisterGetHandler(uri, getter) ||
+                RegisterSetHandler(uri, setter)
             ){
                 return ESP_FAIL;
             }

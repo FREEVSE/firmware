@@ -1,6 +1,7 @@
 #include <Common.h>
 #include <Configuration.h>
 #include <LCD.h>
+#include <ControlPilot.h>
 //#include <LiquidCrystal_I2C.h>
 
 #define LOG_TAG "LCD"
@@ -60,6 +61,12 @@ void LCD::PrintCapabilities(u_short amps, bool l1){
     #endif
 }
 
+void LCD::PrintDebugInfo(){
+    std::tuple<int, int> cpValues = ControlPilot::Raw();
+    device.setCursor(0, 2);
+    device.printf("CP:%d/%d", std::get<0>(cpValues), std::get<1>(cpValues));
+}
+
 void LCD::StartTimer(){
     #ifdef EN_LCD
     xTaskCreatePinnedToCore(TimerTask, "TimerTask", 2048, NULL, 10, &timerTask, APP_CORE);
@@ -75,23 +82,31 @@ void LCD::StopTimer(){
     #endif
 }
 
+void LCD::ClearTimer(){
+    #ifdef EN_LCD
+    device.setCursor(0, 1);
+    device.print("        ");
+    #endif
+}
+
+#ifdef EN_LCD
 void LCD::TimerTask(void * params){
     unsigned long startTime = millis();
 
     while(true){
-        ulong start = micros();
         int secs = (millis() - startTime) * 0.001;
         int mins = secs / 60;
         int hours = mins / 60;
-        mins -= hours * 60;
         secs -= mins * 60;
+        mins -= hours * 60;
+        
 
         device.setCursor(0, 1);
         device.printf("%02d:%02d:%02d", hours, mins, secs);
 
-        ulong stop = micros();
-        vTaskDelay((1000 - ((stop - start) * 1000)) / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);
 }
+#endif
