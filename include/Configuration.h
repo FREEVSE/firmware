@@ -9,10 +9,10 @@
  */
 
 //#define DEBUG
-//#define OCD //Disables any peripherals using pins needed for OCD
-//#define NO_POST //Disables power on self test. Will default to 120v mode.
-//#define NO_LCD //Won't init LCD
-//#define NO_SAFETY_CHECKS //Disables monitoring of protected earth and ambient temp
+//#define OCD               //Disables any peripherals using pins needed for OCD
+//#define NO_POST           //Disables power on self test. Will default to 120v mode.
+//#define NO_LCD            //Won't init LCD
+//#define NO_SAFETY_CHECKS  //Disables monitoring of protected earth and ambient temp
 
 /**
  * Versions
@@ -31,11 +31,11 @@
  * To disable updates entiery, comment EN_UPDATES. This will prevent both
  * automatic AND manual updates.
  */
-#define EN_UPDATES
-#define FREEVSE_SERVER "freevse.org"
-#define FREEVSE_SERVER_SCHEME "https"
-#define UPDATE_INTERVAL_MS 4.32e+7
-#define UPDATE_RETY_COUNT 3
+#define EN_UPDATES                      //Enable the update subsystem. If not defined, no updates can be performed, not even manually.
+#define FREEVSE_SERVER "freevse.org"    //Backend server URL
+#define FREEVSE_SERVER_SCHEME "https"   //Backend serve scheme
+#define UPDATE_INTERVAL_MS 4.32e+7      //Update check interval in ms
+#define UPDATE_RETY_COUNT 3             //How many times to retry the same failed update.
 
 //Modules
 //Comment the line of the module you want to disable
@@ -70,20 +70,17 @@
 /**
  * CP State Levels
  * These define the ADC values used for determining the state of the CP.
- * These will probably work for all ESPs regardless of ADC calibration since
- * the ranges are relatively broad. They can be tweaked if you run an ADC calibration.
  * 
- * Since analog read resolution is set to 9, there are 512 possible values.
- * The CP varies between -12 (0) and +12v (511).
+ * The CP varies between -12 and +12v but is measured from 0v to 3.3V
  */
 
-//These are the expected ADC readings for each of the possible CP states
-#define CP_WITH_VENT 294
-#define CP_CHARGING 358
-#define CP_PRESENT 448
-#define CP_IDLE 511
+//These are the expected ADC readings for each of the possible CP states (in millivolts)
+#define CP_WITH_VENT 2132
+#define CP_CHARGING 2560
+#define CP_PRESENT 2955
+#define CP_IDLE 3300
 
-#define CP_STATE_TOLERANCE 21   //CP adc value must be within +/- this value
+#define CP_STATE_TOLERANCE 138   //CP adc value must be within +/- this value
 
 //These are the possible ranges for the CP state readings. Anything within the _MIN and _MAX values will be considered valid
 #define CP_WITH_VENT_MIN CP_WITH_VENT - CP_STATE_TOLERANCE
@@ -92,14 +89,14 @@
 #define CP_CHARGING_MAX CP_CHARGING + CP_STATE_TOLERANCE
 #define CP_PRESENT_MIN CP_PRESENT - CP_STATE_TOLERANCE
 #define CP_PRESENT_MAX CP_PRESENT + CP_STATE_TOLERANCE
-#define CP_IDLE_MIN CP_PRESENT_MAX
+#define CP_IDLE_MIN CP_IDLE - CP_STATE_TOLERANCE
 #define CP_LOW_MAX CP_STATE_TOLERANCE
 
 /**
  * PWM configuration
  * The EVSE equipment communicates the amperage it can provide with PWM
  * on a 1kHz carrier using the following equation: Imax = 0.6A * (D / 10us)
- * where D is the duty cycle in μs. So for each 10μs of "on time", add 0.6 amps.
+ * where D is the duty cycle in 10μs increments. So for each 10μs of "on time", add 0.6 amps.
  */
 
 #define CFG_MAX_AMP_DEFAULT 12  //12A is generally safe for any 15A outlet. Some chargers use 8A.
@@ -108,6 +105,9 @@
 #define CP_PWM_PERIOD_US 1 / CP_PWM_FREQ * 1000000
 #define CP_PWM_AMP_STEP 0.6     //Amps per step of "high" time as per SAE J1772
 #define CP_PWM_STEP 0.00001     //Duration of one "step" as per SAE J1772
+
+#define CP_MULTISAMPLE_HIGH 5   //Number of samples taken on ADC per CP pulse on high portion
+#define CP_MULTISAMPLE_LOW 1    //Number of samples taken on ADC per CP pulse on low portion
 
 /**
  * Misc settings

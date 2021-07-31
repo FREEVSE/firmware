@@ -4,7 +4,7 @@
 #include <Configuration.h>
 #include <ControlPilot.h>
 #include <ArduinoJson.h>
-#include <RpcServer.h>
+//#include <RpcServer.h>
 //#include <semver.h>
 #include <string>
 #include <sstream>
@@ -25,6 +25,7 @@ TaskHandle_t WiFiManager::updateTask;
 std::atomic<bool> WiFiManager::IsUpdateAvailable(false);
 bool WiFiManager::IsUpdatePending = false;
 char* WiFiManager::UpdateURI;
+RpcServer WiFiManager::rpcSrv;
 
 //This is lets encrypt's root ca cert.
 const char *caCert = \
@@ -69,24 +70,19 @@ void WiFiManager::Init(){
     if(semver_parse(FREEVSE_VERSION, &currentVersion)){
         LOG_E("%s Invalid version string %s, won't be able to check for updates.", __func__, FREEVSE_VERSION);
     }
-
+    
+    InitRpc();
 }
 
-void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
-{
-    LCD::SetWifiState(true);
-    xTaskCreate(UpdateMonitorTask, "updateMonitorTask", 5120, NULL, 1, &updateTask);
-
-    InitMdns();
-
-    RpcServer server;
-    server.Start();
-    server.RegisterGetHandler<const char*>("HWVersion", [](){ return FREEVSE_BOARD; });
-    server.RegisterGetHandler<const char*>("FWVersion", [](){ return FREEVSE_VERSION; });
-    ESP_ERROR_CHECK(server.RegisterPropertyHandler<short>("MaxOutput", Configuration::GetMaxOutputAmps, Configuration::SetMaxOutputAmps));
-    server.RegisterGetHandler<bool>("AutoUpdate", Configuration::GetAutoUpdate);
+void WiFiManager::InitRpc(){
+    rpcSrv = RpcServer();
+    rpcSrv.Start();
+    rpcSrv.RegisterGetHandler<const char*>("HWVersion", [](){ return FREEVSE_BOARD; });
+    rpcSrv.RegisterGetHandler<const char*>("FWVersion", [](){ return FREEVSE_VERSION; });
+    ESP_ERROR_CHECK(rpcSrv.RegisterPropertyHandler<short>("MaxOutput", Configuration::GetMaxOutputAmps, Configuration::SetMaxOutputAmps));
+    rpcSrv.RegisterGetHandler<bool>("AutoUpdate", Configuration::GetAutoUpdate);
     
-    server.RegisterHandler("DeviceInfo", HTTP_GET, [](rpc_request* req, char* response, size_t len){
+    rpcSrv.RegisterHandler("DeviceInfo", HTTP_GET, [](rpc_request* req, char* response, size_t len){
         const int size = JSON_OBJECT_SIZE(5);
         StaticJsonDocument<size> doc;
 
@@ -101,7 +97,7 @@ void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
         return ESP_OK;
     });
 
-    server.RegisterHandler("GetUpdate", HTTP_POST, [](rpc_request* req, char* response, size_t len){
+    rpcSrv.RegisterHandler("GetUpdate", HTTP_POST, [](rpc_request* req, char* response, size_t len){
         char* bin = (char *) malloc(sizeof(char) * 32);
 
         if(!req->TryGetParam("binary", bin, 32)){
@@ -110,6 +106,14 @@ void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
 
         return DoUpdate(bin);
     });
+}
+
+void WiFiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
+{
+    LCD::SetWifiState(true);
+    xTaskCreate(UpdateMonitorTask, "updateMonitorTask", 5120, NULL, 1, &updateTask);
+
+    InitMdns();
 }
 
 void WiFiManager::WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)
@@ -188,7 +192,7 @@ UpdateCheck WiFiManager::CheckUpdate(){
         //Confirm that the provided binary version is in fact newer
         if (semver_compare(availableVersion, currentVersion))
         {
-            auto res = UpdateCheck(Available, new char[24]);
+            auto res = UpdateCheck(Available, new char[24]);//TODO This is a memory leak, the second argument probably wont be deleted
             strcpy((char*)std::get<1>(res), doc["file"]);
             LOG_I("Update available: %s", std::get<1>(res));
             return res;

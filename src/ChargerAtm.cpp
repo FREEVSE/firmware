@@ -115,6 +115,7 @@ void ChargerAtm::EnterUpdating(){
 }
 
 void ChargerAtm::EnterError(){
+    ControlPilot::EndPulse();
     LCD::PrintStatus(lastError);
     Serial.println(lastError);
 }
@@ -131,8 +132,12 @@ int ChargerAtm::event(int id){
             return cpState == CpState::Charge || cpState == CpState::ChargeWithVentilation;
 
         case EVT_CP_INVALID:
-            lastError = "CP Error";
-            return cpState == CpState::Invalid;
+            if(cpState == CpState::Invalid){
+                lastError = "CP Error";
+                return true;
+            }
+
+            return false;
 
         case EVT_UPDATE:
             return WiFiManager::IsUpdateAvailable.load() &&                     //Check if an update was found previously
@@ -140,8 +145,12 @@ int ChargerAtm::event(int id){
                     Configuration::GetFailedUpdateCount() <= UPDATE_RETY_COUNT; //Make sure we haven't tried this version too many times
 
         case EVT_NO_EARTH:
-            lastError = "PE Error";
-            return !ACDetector::IsL1Present();
+            if(!ACDetector::IsL1Present()){
+                lastError = "PE Error";
+                return true;
+            }
+
+            return false;
 
         case EVT_GFCI_TRIP:
             return !GFCI::State();

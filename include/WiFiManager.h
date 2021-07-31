@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <semver.h>
 #include <ArduinoJson.h>
+#include <RpcServer.h>
 
 enum UpdateCheckResult{
     Error,
@@ -51,8 +52,10 @@ class WiFiManager{
         static void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
         static void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);
         static void UpdateMonitorTask(void* param);  
+        static void InitRpc();
         static esp_err_t InitMdns();
         static semver_t currentVersion;
         static EventGroupHandle_t wifiEvtGrp;
         static TaskHandle_t updateTask;
+        static RpcServer rpcSrv;
 };

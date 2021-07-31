@@ -9,4 +9,5 @@ class Bluetooth{
          * - If WiFi isn'connected, it will initialize blufi
          */
         static void Init();
+        static void ScanForObdAdapter();
 };

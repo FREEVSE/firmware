@@ -62,9 +62,11 @@ void LCD::PrintCapabilities(u_short amps, bool l1){
 }
 
 void LCD::PrintDebugInfo(){
+    #ifdef EN_LCD
     std::tuple<int, int> cpValues = ControlPilot::Raw();
     device.setCursor(0, 2);
     device.printf("CP:%d/%d", std::get<0>(cpValues), std::get<1>(cpValues));
+    #endif
 }
 
 void LCD::StartTimer(){

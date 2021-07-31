@@ -1,4 +1,5 @@
 #pragma once
+#include <esp_adc_cal.h>
 
 /**
  * @brief Possible states of the control pilot
@@ -75,6 +76,7 @@ class ControlPilot{
         static const char* ToString(const CpState value);
 
     private:
+        static esp_adc_cal_characteristics_t calVal;
         static void IRAM_ATTR Pulse(void *);
         static Action nextAction;        
         static bool pulsing;

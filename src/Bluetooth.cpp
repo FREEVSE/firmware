@@ -30,3 +30,18 @@ void Bluetooth::Init(){
   }
   
 }
+
+void Bluetooth::ScanForObdAdapter(){
+  auto scan = BLEDevice::getScan();
+  scan->setAdvertisedDeviceCallbacks(new BleScanCallbacks);
+  scan->setActiveScan(true);
+  scan->setInterval(40);
+  scan->setWindow(30);
+  scan->start(10000);
+}
+
+class BleScanCallbacks : public BLEAdvertisedDeviceCallbacks{
+  void onResult(BLEAdvertisedDevice dev){
+    LOG_I("Found BLE device: %s, %s", dev.getName(), dev.getAddress());
+  }
+};

@@ -1,3 +1,4 @@
+#include <Common.h>
 #include <Configuration.h>
 #include <ControlPilot.h>
 #include <Arduino.h>
@@ -6,17 +7,21 @@
 #include <driver/gpio.h>
 #include <driver/adc.h>
 #include <soc/soc.h>
+#include <esp_adc_cal.h>
 
-#define TAG "CP"
+#define LOG_TAG "CP"
 
 #define DELAY_PULSEHIGH_SAMPLEHIGH 30
 #define DELAY_PULSELOW_SAMPLELOW 30
+
+#define DEFAULT_VREF 1100
 
 //TODO Fix all the hardcoded timer groups and numbers
 
 Action ControlPilot::nextAction;
 bool ControlPilot::pulsing = false;
 int ControlPilot::highTime = 0;
+esp_adc_cal_characteristics_t ControlPilot::calVal;
 
 volatile unsigned int ControlPilot::lastHighValue = 0;
 volatile int ControlPilot::lastLowValue = -1;
@@ -40,9 +45,16 @@ void ControlPilot::Init(){
     //Set analog read res to a lower value for slightly more linear curve.
     analogReadResolution(9);
 
-    //adcAttachPin(CP_READ_PIN);
-    adc1_config_width(ADC_WIDTH_9Bit);
-    adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_DB_0);
+    adc1_config_width(ADC_WIDTH_BIT_9);
+    adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_11db);
+
+    auto res = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_11db, ADC_WIDTH_BIT_9, DEFAULT_VREF, &calVal);
+
+    switch(res){
+        case ESP_ADC_CAL_VAL_EFUSE_VREF: LOG_I("VREF used for CP ADC calibration"); break;
+        case ESP_ADC_CAL_VAL_EFUSE_TP: LOG_I("Two Point value used for CP ADC calibration"); break;
+        case ESP_ADC_CAL_VAL_DEFAULT_VREF: LOG_I("Default VREF (%d) used for CP ADC calibration", DEFAULT_VREF); break;
+    }
 
     ControlPilot::highTime = (int)(Configuration::GetCpPwmDutyCycle() * CP_PWM_FREQ);
     
@@ -79,8 +91,6 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
     TIMERG0.int_clr_timers.t0 = 1;
 
     int nextActionDelay = 0;
-    ulong startMicros = micros();
-    ulong duration;
 
     switch(nextAction){
         //Pulse the CP line HIGH
@@ -92,11 +102,23 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
         
         //Sample the CP line
         case Action::SampleHigh:
-            lastHighValue = adc1_get_raw(ADC1_CHANNEL_5); //analogRead(CP_READ_PIN);
+        {
+            #if CP_MULTISAMPLE_HIGH > 1
+            int avg = 0;
+
+            for(short i = 0; i < CP_MULTISAMPLE_HIGH; i++){
+                avg += adc1_get_raw(ADC1_CHANNEL_5);
+            }
+
+            lastHighValue = avg / CP_MULTISAMPLE_HIGH;
+            #else
+            lastHighValue = adc1_get_raw(ADC1_CHANNEL_5);
+            #endif
+            
             nextActionDelay = highTime - DELAY_PULSEHIGH_SAMPLEHIGH;
             nextAction = Action::PulseLow;
             break;
-
+        }
         //CP line back to LOW
         case Action::PulseLow:
             digitalWrite(CP_PWM_PIN, HIGH);
@@ -105,17 +127,26 @@ void IRAM_ATTR ControlPilot::Pulse(void* arg){
             break;
 
         case Action::SampleLow:
+        {
+            #if CP_MULTISAMPLE_LOW > 1
+            int avg = 0;
+
+            for(short i = 0; i < CP_MULTISAMPLE_LOW; i++){
+                avg += adc1_get_raw(ADC1_CHANNEL_5);
+            }
+
+            lastLowValue = avg / CP_MULTISAMPLE_LOW;
+            #else
             lastLowValue = adc1_get_raw(ADC1_CHANNEL_5);
+            #endif
+
             nextActionDelay = CP_PWM_PERIOD_US - highTime - DELAY_PULSELOW_SAMPLELOW;
             nextAction = Action::PulseHigh;
             break;
-
-        //TODO: Sample CP line when low
+        }
     }
-
-    duration = micros() - startMicros;
-
-    TIMERG0.hw_timer[0].alarm_low = nextActionDelay - duration;    //Set next alarm. Since it's always less than 1000, we can set only the first 32 bits.
+    
+    TIMERG0.hw_timer[0].alarm_low = nextActionDelay;    //Set next alarm. Since it's always less than 1000, we can set only the first 32 bits.
     TIMERG0.hw_timer[0].alarm_high = 0x0;               //... Just to be sure
     TIMERG0.hw_timer[0].config.alarm_en = 1;            //We need to re-enable the alarm
 }
@@ -196,7 +227,7 @@ CpState ControlPilot::State(){
     {
         //If we haven't had time to read the first pulse, return the last state (should be idle)
         if(lastLowValue < 0){ 
-            ESP_LOGI(TAG, "Still waiting for first pulse");
+            LOG_I("Still waiting for first pulse");
             return lastState; 
             }
 
@@ -204,7 +235,7 @@ CpState ControlPilot::State(){
         //If the low value isn't roughly -12V, then either the vehicle's diode has failed
         //or something else is touching the CP and PE pins (like a curious child's fingers)
         if (lastLowValue >= CP_LOW_MAX) { 
-            ESP_LOGI(TAG, "Low value (%i) was above 0 threshold (%i)", lastLowValue, CP_LOW_MAX);
+            LOG_W("Low value (%i) was above 0 threshold (%i)", lastLowValue, CP_LOW_MAX);
             return lastState = CpState::Invalid; 
             }
 
@@ -212,8 +243,10 @@ CpState ControlPilot::State(){
     }
     else
     {
-        highVal = analogRead(CP_READ_PIN);
+        highVal = adc1_get_raw(ADC1_CHANNEL_5);
     }
+
+    highVal = esp_adc_cal_raw_to_voltage(highVal, &calVal);
 
     CpState state = CpState::Invalid;
 
@@ -233,12 +266,19 @@ CpState ControlPilot::State(){
     {
         state = CpState::ChargeWithVentilation;
     }
+    #ifdef DEBUG
+    else{
+        LOG_W("CP voltage invalid (%d)", highVal);
+    }
+    #endif
 
     return lastState = state;
     #else
     return CpState::Idle;
     #endif
 }
+
+
 
 std::tuple<int, int> ControlPilot::Raw(){
     return std::make_tuple(lastHighValue, lastLowValue);
